@@ -1,4 +1,3 @@
-// App.jsx — Layout principal con conmutador de Modo Edición, Vista Previa y Gestión de Cursos
 import React, { useState, useEffect } from 'react';
 import TreeEditor from './components/TreeEditor';
 import Canvas from './components/Canvas';
@@ -21,12 +20,22 @@ import {
   Trash2,
   CheckCircle2,
   FileCode,
-  HardDrive
+  HardDrive,
+  RotateCcw,
+  RotateCw,
+  Loader2,
+  Check
 } from 'lucide-react';
 
 export default function App() {
   const {
     course,
+    history,
+    future,
+    saveStatus,
+    undo,
+    redo,
+    setCourseTitle,
     viewMode,
     playerScreen,
     setViewMode,
@@ -48,6 +57,42 @@ export default function App() {
   const [serverCourses, setServerCourses] = useState([]);
   const [saveStatusMessage, setSaveStatusMessage] = useState('');
   const [newCourseTitle, setNewCourseTitle] = useState('');
+
+  // Teclas rápidas (Ctrl+Z para Deshacer, Ctrl+Y / Ctrl+Shift+Z para Rehacer, Ctrl+S para Guardar)
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      const isMac = navigator.platform.toUpperCase().indexOf('MAC') >= 0;
+      const cmdOrCtrl = isMac ? e.metaKey : e.ctrlKey;
+
+      if (cmdOrCtrl && e.key.toLowerCase() === 'z') {
+        e.preventDefault();
+        if (e.shiftKey) {
+          redo();
+        } else {
+          undo();
+        }
+      } else if (cmdOrCtrl && e.key.toLowerCase() === 'y') {
+        e.preventDefault();
+        redo();
+      } else if (cmdOrCtrl && e.key.toLowerCase() === 's') {
+        e.preventDefault();
+        saveCourseToServer().catch((err) => alert('Error al guardar: ' + err.message));
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [undo, redo, saveCourseToServer]);
+
+  // Autoguardado diferido automático al servidor tras 2.5s de inactividad de cambios
+  useEffect(() => {
+    if (saveStatus === 'unsaved') {
+      const timer = setTimeout(() => {
+        saveCourseToServer().catch((err) => console.warn('Auto-save error:', err));
+      }, 2500);
+      return () => clearTimeout(timer);
+    }
+  }, [saveStatus, course, saveCourseToServer]);
 
   const activeModule = course.modules.find((m) => m.id === selectedModuleId) || course.modules[0];
 
@@ -133,12 +178,70 @@ export default function App() {
           <input
             className="font-semibold text-base sm:text-lg bg-transparent text-white focus:outline-none focus:border-b focus:border-[#f58220] px-1 py-0.5"
             value={course.title || ''}
-            onChange={(e) => useCourseStore.setState((s) => ({ course: { ...s.course, title: e.target.value } }))}
+            onChange={(e) => setCourseTitle(e.target.value)}
           />
         </div>
 
         {/* CONMUTADOR DE MODO Y BOTONES DE ACCIÓN */}
         <div className="flex items-center space-x-2">
+          {/* BOTONES DESHACER Y REHACER (UNDO / REDO) */}
+          <div className="bg-slate-800 p-1 rounded-lg flex items-center border border-slate-700 space-x-0.5">
+            <button
+              onClick={undo}
+              disabled={!history || history.length === 0}
+              className={`p-1.5 rounded transition-all cursor-pointer ${
+                history && history.length > 0
+                  ? 'text-slate-200 hover:text-white hover:bg-slate-700'
+                  : 'text-slate-600 cursor-not-allowed opacity-50'
+              }`}
+              title="Deshacer último cambio (Ctrl+Z)"
+            >
+              <RotateCcw size={14} />
+            </button>
+
+            <button
+              onClick={redo}
+              disabled={!future || future.length === 0}
+              className={`p-1.5 rounded transition-all cursor-pointer ${
+                future && future.length > 0
+                  ? 'text-slate-200 hover:text-white hover:bg-slate-700'
+                  : 'text-slate-600 cursor-not-allowed opacity-50'
+              }`}
+              title="Rehacer cambio (Ctrl+Y)"
+            >
+              <RotateCw size={14} />
+            </button>
+          </div>
+
+          {/* BOTÓN GUARDAR Y ESTADO DE AUTOGUARDADO */}
+          <button
+            onClick={handleSaveToServer}
+            disabled={saveStatus === 'saving'}
+            className={`text-xs px-3 py-1.5 rounded flex items-center space-x-1.5 font-bold transition-all cursor-pointer border shadow-xs ${
+              saveStatus === 'saved'
+                ? 'bg-slate-800 text-emerald-400 border-slate-700 hover:bg-slate-700'
+                : saveStatus === 'saving'
+                ? 'bg-slate-800 text-amber-400 border-slate-700 cursor-wait'
+                : 'bg-amber-600 hover:bg-amber-700 text-white border-amber-500 shadow-sm animate-pulse'
+            }`}
+            title="Guardar cambios en el servidor (Ctrl+S)"
+          >
+            {saveStatus === 'saving' ? (
+              <Loader2 size={14} className="animate-spin text-amber-400" />
+            ) : saveStatus === 'saved' ? (
+              <Check size={14} className="text-emerald-400" />
+            ) : (
+              <Save size={14} />
+            )}
+            <span>
+              {saveStatus === 'saving'
+                ? 'Guardando...'
+                : saveStatus === 'saved'
+                ? '✓ Guardado'
+                : 'Guardar'}
+            </span>
+          </button>
+
           {/* BOTÓN GESTIÓN DE CURSOS (CREAR, GUARDAR, CARGAR) */}
           <button
             onClick={handleOpenCourseManager}

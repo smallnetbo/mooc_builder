@@ -327,20 +327,96 @@ const emptyAssessment = (title = 'Nueva evaluación') => ({
 
 const COLOR_PALETTE = ['#e11d48', '#f58220', '#2563eb', '#16a34a', '#7c3aed', '#0d9488', '#db2777'];
 
-export const useCourseStore = create((set, get) => ({
-  course: initialCourse,
+// Intentar restaurar curso activo guardado localmente si existe
+let initialSavedCourse = null;
+try {
+  const localStr = localStorage.getItem('mooc_active_course_auto') || localStorage.getItem('active_course_backup');
+  if (localStr) {
+    const parsed = JSON.parse(localStr);
+    if (parsed && Array.isArray(parsed.modules)) {
+      initialSavedCourse = parsed;
+    }
+  }
+} catch (e) {}
+
+const activeInitialCourse = initialSavedCourse || initialCourse;
+
+// Helper para registrar historial de Undo/Redo y persistencia local inmediata
+const pushCourseChange = (s, newCourse) => {
+  const currentHistory = s.history || [];
+  const updatedHistory = [...currentHistory.slice(-29), s.course];
   
+  try {
+    localStorage.setItem('mooc_active_course_auto', JSON.stringify(newCourse));
+  } catch (e) {}
+
+  return {
+    course: newCourse,
+    history: updatedHistory,
+    future: [],
+    saveStatus: 'unsaved'
+  };
+};
+
+export const useCourseStore = create((set, get) => ({
+  course: activeInitialCourse,
+  
+  // Historial de Deshacer / Rehacer
+  history: [],
+  future: [],
+  saveStatus: 'saved', // 'saved' | 'saving' | 'unsaved'
+  lastSavedAt: null,
+
   // Vista y Navegación
   viewMode: 'player', // 'editor' | 'player'
   playerScreen: 'cover', // 'cover' | 'lesson'
-  selectedModuleId: 'mod-1',
-  selectedLessonId: 'm1-l1',
-  completedLessonIds: ['m1-l5'],
+  selectedModuleId: (activeInitialCourse.modules[0] || {}).id || 'mod-1',
+  selectedLessonId: activeInitialCourse.modules[0] ? (getAllLessons(activeInitialCourse.modules[0])[0] || {}).id || null : null,
+  completedLessonIds: [],
   sidebarOpen: true,
 
   setViewMode: (mode) => set({ viewMode: mode }),
   setPlayerScreen: (screen) => set({ playerScreen: screen }),
   toggleSidebar: () => set((s) => ({ sidebarOpen: !s.sidebarOpen })),
+
+  setCourseTitle: (title) => set((s) => pushCourseChange(s, { ...s.course, title })),
+
+  // Acciones de Deshacer (Undo) y Rehacer (Redo)
+  undo: () => set((s) => {
+    if (!s.history || s.history.length === 0) return s;
+    const previousCourse = s.history[s.history.length - 1];
+    const newHistory = s.history.slice(0, s.history.length - 1);
+    const newFuture = [s.course, ...(s.future || [])];
+    
+    try {
+      localStorage.setItem('mooc_active_course_auto', JSON.stringify(previousCourse));
+    } catch (e) {}
+
+    return {
+      course: previousCourse,
+      history: newHistory,
+      future: newFuture,
+      saveStatus: 'unsaved'
+    };
+  }),
+
+  redo: () => set((s) => {
+    if (!s.future || s.future.length === 0) return s;
+    const nextCourse = s.future[0];
+    const newFuture = s.future.slice(1);
+    const newHistory = [...(s.history || []), s.course];
+
+    try {
+      localStorage.setItem('mooc_active_course_auto', JSON.stringify(nextCourse));
+    } catch (e) {}
+
+    return {
+      course: nextCourse,
+      history: newHistory,
+      future: newFuture,
+      saveStatus: 'unsaved'
+    };
+  }),
 
   selectModule: (moduleId) => {
     const { course } = get();
@@ -425,28 +501,31 @@ export const useCourseStore = create((set, get) => ({
       objective: 'Describa aquí el objetivo principal del módulo.',
       children: []
     };
+    const newCourse = { ...s.course, modules: [...s.course.modules, newMod] };
     return {
-      course: { ...s.course, modules: [...s.course.modules, newMod] },
+      ...pushCourseChange(s, newCourse),
       selectedModuleId: newMod.id,
       playerScreen: 'cover'
     };
   }),
 
-  updateModuleMeta: (moduleId, data) => set((s) => ({
-    course: {
+  updateModuleMeta: (moduleId, data) => set((s) => {
+    const newCourse = {
       ...s.course,
       modules: s.course.modules.map((m) => m.id === moduleId ? { ...m, ...data } : m)
-    }
-  })),
+    };
+    return pushCourseChange(s, newCourse);
+  }),
 
-  addTopic: (moduleId, title) => set((s) => ({
-    course: {
+  addTopic: (moduleId, title) => set((s) => {
+    const newCourse = {
       ...s.course,
       modules: s.course.modules.map((m) => m.id === moduleId
         ? { ...m, children: [...m.children, { id: nanoid(8), type: 'topic', title, children: [] }] }
         : m),
-    },
-  })),
+    };
+    return pushCourseChange(s, newCourse);
+  }),
 
   addLessonOrAssessment: (moduleId, topicId, kind = 'lesson') => set((s) => {
     const newChild = kind === 'lesson' ? emptyLesson() : emptyAssessment();
@@ -461,7 +540,7 @@ export const useCourseStore = create((set, get) => ({
       }),
     };
     return {
-      course: newCourse,
+      ...pushCourseChange(s, newCourse),
       selectedLessonId: newChild.id
     };
   }),
@@ -472,7 +551,7 @@ export const useCourseStore = create((set, get) => ({
     for (const id of path) arr = arr.find((n) => n.id === id).children;
     const [moved] = arr.splice(fromIndex, 1);
     arr.splice(toIndex, 0, moved);
-    return { course: clone };
+    return pushCourseChange(s, clone);
   }),
 
   deleteModule: (moduleId) => set((s) => {
@@ -483,22 +562,24 @@ export const useCourseStore = create((set, get) => ({
     const newModules = s.course.modules.filter((m) => m.id !== moduleId);
     const nextMod = newModules[0];
     const nextLesson = nextMod ? getAllLessons(nextMod)[0] : null;
+    const newCourse = { ...s.course, modules: newModules };
     return {
-      course: { ...s.course, modules: newModules },
+      ...pushCourseChange(s, newCourse),
       selectedModuleId: s.selectedModuleId === moduleId ? (nextMod ? nextMod.id : null) : s.selectedModuleId,
       selectedLessonId: s.selectedModuleId === moduleId ? (nextLesson ? nextLesson.id : null) : s.selectedLessonId,
     };
   }),
 
-  deleteTopic: (moduleId, topicId) => set((s) => ({
-    course: {
+  deleteTopic: (moduleId, topicId) => set((s) => {
+    const newCourse = {
       ...s.course,
       modules: s.course.modules.map((m) => m.id !== moduleId ? m : {
         ...m,
         children: m.children.filter((t) => t.id !== topicId),
       }),
-    },
-  })),
+    };
+    return pushCourseChange(s, newCourse);
+  }),
 
   deleteLessonOrAssessment: (lessonId) => set((s) => {
     const newCourse = {
@@ -512,43 +593,47 @@ export const useCourseStore = create((set, get) => ({
       })),
     };
     return {
-      course: newCourse,
+      ...pushCourseChange(s, newCourse),
       selectedLessonId: s.selectedLessonId === lessonId ? null : s.selectedLessonId,
     };
   }),
 
   // --- Bloques de contenido ---
-  addBlock: (lessonId, kind) => set((s) => ({
-    course: updateLesson(s.course, lessonId, (lesson) => ({
+  addBlock: (lessonId, kind) => set((s) => {
+    const newCourse = updateLesson(s.course, lessonId, (lesson) => ({
       ...lesson,
       blocks: [...(lesson.blocks || []), { id: nanoid(8), kind, content: kind === 'text' ? '' : { url: '', caption: '' } }],
-    })),
-  })),
+    }));
+    return pushCourseChange(s, newCourse);
+  }),
 
-  updateBlock: (lessonId, blockId, content) => set((s) => ({
-    course: updateLesson(s.course, lessonId, (lesson) => ({
+  updateBlock: (lessonId, blockId, content) => set((s) => {
+    const newCourse = updateLesson(s.course, lessonId, (lesson) => ({
       ...lesson,
       blocks: (lesson.blocks || []).map((b) => b.id === blockId ? { ...b, content } : b),
-    })),
-  })),
+    }));
+    return pushCourseChange(s, newCourse);
+  }),
 
-  deleteBlock: (lessonId, blockId) => set((s) => ({
-    course: updateLesson(s.course, lessonId, (lesson) => ({
+  deleteBlock: (lessonId, blockId) => set((s) => {
+    const newCourse = updateLesson(s.course, lessonId, (lesson) => ({
       ...lesson,
       blocks: (lesson.blocks || []).filter((b) => b.id !== blockId),
-    })),
-  })),
+    }));
+    return pushCourseChange(s, newCourse);
+  }),
 
-  updateLessonQuote: (lessonId, quoteBanner) => set((s) => ({
-    course: updateLesson(s.course, lessonId, (lesson) => ({
+  updateLessonQuote: (lessonId, quoteBanner) => set((s) => {
+    const newCourse = updateLesson(s.course, lessonId, (lesson) => ({
       ...lesson,
       quoteBanner: { ...(lesson.quoteBanner || {}), ...quoteBanner }
-    }))
-  })),
+    }));
+    return pushCourseChange(s, newCourse);
+  }),
 
   // --- Gestión de Preguntas de Evaluaciones ---
-  addQuestion: (lessonId) => set((s) => ({
-    course: updateLesson(s.course, lessonId, (assessment) => {
+  addQuestion: (lessonId) => set((s) => {
+    const newCourse = updateLesson(s.course, lessonId, (assessment) => {
       const qNum = (assessment.questions || []).length + 1;
       const newQ = {
         id: nanoid(8),
@@ -564,22 +649,25 @@ export const useCourseStore = create((set, get) => ({
         ...assessment,
         questions: [...(assessment.questions || []), newQ]
       };
-    })
-  })),
+    });
+    return pushCourseChange(s, newCourse);
+  }),
 
-  updateQuestion: (lessonId, questionId, updatedData) => set((s) => ({
-    course: updateLesson(s.course, lessonId, (assessment) => ({
+  updateQuestion: (lessonId, questionId, updatedData) => set((s) => {
+    const newCourse = updateLesson(s.course, lessonId, (assessment) => ({
       ...assessment,
       questions: (assessment.questions || []).map((q) => q.id === questionId ? { ...q, ...updatedData } : q)
-    }))
-  })),
+    }));
+    return pushCourseChange(s, newCourse);
+  }),
 
-  deleteQuestion: (lessonId, questionId) => set((s) => ({
-    course: updateLesson(s.course, lessonId, (assessment) => ({
+  deleteQuestion: (lessonId, questionId) => set((s) => {
+    const newCourse = updateLesson(s.course, lessonId, (assessment) => ({
       ...assessment,
       questions: (assessment.questions || []).filter((q) => q.id !== questionId)
-    }))
-  })),
+    }));
+    return pushCourseChange(s, newCourse);
+  }),
 
   // --- Gestión de Persistencia (Crear, Guardar, Cargar) ---
   createNewCourse: (title = 'Nuevo Curso SCORM') => {
@@ -625,8 +713,15 @@ export const useCourseStore = create((set, get) => ({
       ]
     };
 
+    try {
+      localStorage.setItem('mooc_active_course_auto', JSON.stringify(blankCourse));
+    } catch (e) {}
+
     set({
       course: blankCourse,
+      history: [],
+      future: [],
+      saveStatus: 'saved',
       selectedModuleId: firstModId,
       selectedLessonId: firstLessonId,
       playerScreen: 'cover',
@@ -643,37 +738,52 @@ export const useCourseStore = create((set, get) => ({
     const firstMod = courseData.modules[0];
     const firstLesson = firstMod ? getAllLessons(firstMod)[0] : null;
 
+    try {
+      localStorage.setItem('mooc_active_course_auto', JSON.stringify(courseData));
+      localStorage.setItem('active_course_backup', JSON.stringify(courseData));
+    } catch (e) {}
+
     set({
       course: courseData,
+      history: [],
+      future: [],
+      saveStatus: 'saved',
       selectedModuleId: firstMod ? firstMod.id : null,
       selectedLessonId: firstLesson ? firstLesson.id : null,
       playerScreen: 'cover',
       completedLessonIds: []
     });
-
-    try {
-      localStorage.setItem('active_course_backup', JSON.stringify(courseData));
-    } catch (e) {}
   },
 
   saveCourseToServer: async () => {
+    set({ saveStatus: 'saving' });
     const { course } = get();
-    const res = await fetch('/api/courses', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(course)
-    });
-
-    if (!res.ok) {
-      const errText = await res.text().catch(() => '');
-      throw new Error(`Error al guardar en el servidor (${res.status}): ${errText}`);
-    }
-
     try {
-      localStorage.setItem('active_course_backup', JSON.stringify(course));
-    } catch (e) {}
+      const res = await fetch('/api/courses', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(course)
+      });
 
-    return await res.json();
+      if (!res.ok) {
+        const errText = await res.text().catch(() => '');
+        set({ saveStatus: 'unsaved' });
+        throw new Error(`Error al guardar en el servidor (${res.status}): ${errText}`);
+      }
+
+      const data = await res.json();
+      set({ saveStatus: 'saved', lastSavedAt: new Date() });
+
+      try {
+        localStorage.setItem('mooc_active_course_auto', JSON.stringify(course));
+        localStorage.setItem('active_course_backup', JSON.stringify(course));
+      } catch (e) {}
+
+      return data;
+    } catch (err) {
+      set({ saveStatus: 'unsaved' });
+      throw err;
+    }
   },
 
   downloadCourseJson: () => {

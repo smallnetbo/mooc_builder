@@ -1,14 +1,14 @@
 {
   "id": "course-mooc-1",
-  "title": "Ley Marco de Autonomías y Descentralización",
+  "title": "Ley Marco de Autonomías y Descentralización \"Andrés Ibáñez\" (Ley N° 031)",
   "modules": [
     {
       "id": "mod-1",
       "number": "Módulo 1",
       "title": "Aspectos generales de la ley marco de autonomías",
       "primaryColor": "#e11d48",
-      "coverImage": "https://seamovil.com/imagenes/photorealistic-lawyer-environment.jpg",
-      "objective": "La Ley N° 031 \"Andrés Ibáñez\", promulgada el 19 de julio de 2010, tiene como finalidad regular el régimen de autonomías por mandato constitucional y sentar las bases de la organización territorial del Estado Plurinacional de Bolivia.",
+      "coverImage": "https://images.unsplash.com/photo-1556761175-5973dc0f32e7?q=80&w=1600&auto=format&fit=crop",
+      "objective": "La gestión empresarial en las Micro y pequeñas empresas (MyPE) permitirá dirigir estratégicamente el rumbo de la empresa hacia el crecimiento, la sostenibilidad y el cumplimiento de los objetivos empresariales.",
       "children": [
         {
           "id": "topic-m1",
@@ -28,13 +28,14 @@
                 {
                   "id": "m1-b1",
                   "kind": "text",
-                  "content": "Videoo:"
+                  "content": "Le invitamos a analizar el siguiente video para profundizar en la gestión empresarial de las MyPE:"
                 },
                 {
                   "id": "m1-b2",
                   "kind": "video",
                   "content": {
-                    "url": "https://drive.google.com/file/d/1Jv6u0KCjxTonHzNXXSTjIM_gJKIXvPYE/view?usp=drive_link"
+                    "url": "https://www.youtube.com/embed/dQw4w9WgXcQ",
+                    "caption": "Video explicativo: Gestión Empresarial"
                   }
                 }
               ]
@@ -348,10 +349,7 @@
                   "kind": "text",
                   "content": "Introducción a la tipología de estados financieros."
                 }
-              ],
-              "quoteBanner": {
-                "text": ""
-              }
+              ]
             },
             {
               "id": "m4-l2",
@@ -384,17 +382,36 @@
       ]
     },
     {
-      "id": "3qNo-4aP",
+      "id": "ZpQ-HTn7",
       "type": "module",
       "number": "Módulo 5",
       "title": "Régimen competencial",
       "primaryColor": "#7c3aed",
       "coverImage": "https://images.unsplash.com/photo-1556761175-5973dc0f32e7?q=80&w=1600&auto=format&fit=crop",
       "objective": "Describa aquí el objetivo principal del módulo.",
-      "children": []
+      "children": [
+        {
+          "id": "Jhyaj-7r",
+          "type": "topic",
+          "title": "Nuevo tema",
+          "children": [
+            {
+              "id": "-JqYg30R",
+              "type": "lesson",
+              "title": "Nueva lección",
+              "subtitle": "ELEMENTO NUEVO",
+              "quoteBanner": {
+                "text": "Añada una cita o idea clave resaltada para esta lección.",
+                "bgImage": "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?q=80&w=1600&auto=format&fit=crop"
+              },
+              "blocks": []
+            }
+          ]
+        }
+      ]
     },
     {
-      "id": "bXUSVC20",
+      "id": "2rp_oFlY",
       "type": "module",
       "number": "Módulo 6",
       "title": "Régimen Económico Financiero y Coordinación Gubernativa",
