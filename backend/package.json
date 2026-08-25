@@ -1,0 +1,12 @@
+{
+  "name": "scorm-export-service",
+  "version": "1.0.0",
+  "main": "server.js",
+  "scripts": { "start": "node server.js" },
+  "dependencies": {
+    "archiver": "^7.0.1",
+    "cors": "^2.8.5",
+    "express": "^4.19.2",
+    "xmlbuilder2": "^3.1.1"
+  }
+}

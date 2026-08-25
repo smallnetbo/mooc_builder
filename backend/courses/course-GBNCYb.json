@@ -1,0 +1,89 @@
+{
+  "id": "course-GBNCYb",
+  "title": "Ley Marco de Autonomías",
+  "modules": [
+    {
+      "id": "mod-SkxLRz",
+      "number": "Módulo 1",
+      "title": "Introducción al Curso",
+      "primaryColor": "#e11d48",
+      "coverImage": "https://images.unsplash.com/photo-1556761175-5973dc0f32e7?q=80&w=1600&auto=format&fit=crop",
+      "objective": "Describa aquí los objetivos clave de aprendizaje para este módulo.",
+      "children": [
+        {
+          "id": "topic-hSXdiY",
+          "type": "topic",
+          "title": "Unidad Inicial",
+          "children": [
+            {
+              "id": "les-hoNsl_",
+              "type": "lesson",
+              "title": "Lección de Bienvenida",
+              "subtitle": "ELEMENTO 1 DE 1",
+              "quoteBanner": {
+                "text": "Bienvenido al nuevo módulo interactivo. Añada sus conceptos clave aquí.",
+                "bgImage": "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?q=80&w=1600&auto=format&fit=crop"
+              },
+              "blocks": [
+                {
+                  "id": "b-init-1",
+                  "kind": "text",
+                  "content": "Escriba aquí el contenido explicativo de su lección."
+                }
+              ]
+            },
+            {
+              "id": "HeTedV-N",
+              "type": "assessment",
+              "title": "Nueva evaluación",
+              "subtitle": "EVALUACIÓN",
+              "questions": [
+                {
+                  "id": "TFsOMpL3",
+                  "text": "es cierto",
+                  "correctOptionId": "DOgXcJ",
+                  "options": [
+                    {
+                      "id": "-9MmyC",
+                      "text": "tributos"
+                    },
+                    {
+                      "id": "DOgXcJ",
+                      "text": "tasas"
+                    }
+                  ]
+                }
+              ],
+              "passScore": 70
+            },
+            {
+              "id": "slc__6yy",
+              "type": "lesson",
+              "title": "Nueva lección",
+              "subtitle": "ELEMENTO NUEVO",
+              "quoteBanner": {
+                "text": "Ley 031",
+                "bgImage": "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?q=80&w=1600&auto=format&fit=crop"
+              },
+              "blocks": [
+                {
+                  "id": "cEf8thWH",
+                  "kind": "text",
+                  "content": "<p>Escribe aqesta ley es la Ley marco</p>"
+                },
+                {
+                  "id": "jG8F2h3e",
+                  "kind": "video",
+                  "content": {
+                    "url": "",
+                    "caption": ""
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

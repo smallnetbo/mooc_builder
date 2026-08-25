@@ -1,0 +1,70 @@
+<?xml version="1.0" standalone="yes"?>
+<!--
+  PLANTILLA ANOTADA — imsmanifest.xml (SCORM 1.2)
+  Esta versión es el ejemplo de referencia. En producción, manifestBuilder.js
+  genera este mismo árbol dinámicamente con xmlbuilder2 recorriendo el JSON del curso.
+
+  Mapeo dinámico:
+    {{COURSE_ID}}        -> course.id                 (identifier del manifest y organización)
+    {{COURSE_TITLE}}      -> course.title              (<title> de la organización raíz)
+    <item>                -> un nodo por Módulo/Tema/Lección/Evaluación (recursivo)
+    identifierref          -> apunta al <resource> del SCO correspondiente a esa lección/evaluación
+    <resource>              -> uno por cada lección/evaluación, con href = su index.html
+    <file>                 -> cada asset real (html, js, css, imágenes) de ese SCO
+-->
+<manifest identifier="MANIFEST-{{COURSE_ID}}" version="1.2"
+  xmlns="http://www.imsproject.org/xsd/imscp_rootv1p1p2"
+  xmlns:adlcp="http://www.adlnet.org/xsd/adlcp_rootv1p2"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://www.imsproject.org/xsd/imscp_rootv1p1p2 imscp_rootv1p1p2.xsd
+                       http://www.imsglobal.org/xsd/imsmd_rootv1p2p1 imsmd_rootv1p2p1.xsd
+                       http://www.adlnet.org/xsd/adlcp_rootv1p2 adlcp_rootv1p2.xsd">
+
+  <metadata>
+    <schema>ADL SCORM</schema>
+    <schemaversion>1.2</schemaversion>
+  </metadata>
+
+  <organizations default="ORG-{{COURSE_ID}}">
+    <organization identifier="ORG-{{COURSE_ID}}">
+      <title>{{COURSE_TITLE}}</title>
+
+      <!-- Nivel Módulo (carpeta organizativa, sin recurso propio) -->
+      <item identifier="ITEM-modulo_1" identifierref="">
+        <title>Módulo 1: Introducción</title>
+
+        <!-- Nivel Tema -->
+        <item identifier="ITEM-tema_1_1" identifierref="">
+          <title>Tema 1.1</title>
+
+          <!-- Nivel Lección → SCO real, referencia un <resource> -->
+          <item identifier="ITEM-leccion_1_1_1" identifierref="RES-leccion_1_1_1">
+            <title>Lección: Bienvenida</title>
+            <adlcp:masteryscore>70</adlcp:masteryscore>
+          </item>
+
+          <!-- Evaluación → también es un SCO -->
+          <item identifier="ITEM-eval_1_1" identifierref="RES-eval_1_1">
+            <title>Evaluación 1.1</title>
+            <adlcp:masteryscore>70</adlcp:masteryscore>
+          </item>
+        </item>
+      </item>
+    </organization>
+  </organizations>
+
+  <resources>
+    <resource identifier="RES-leccion_1_1_1" type="webcontent" adlcp:scormtype="sco"
+              href="sco/leccion_1_1_1/index.html">
+      <file href="sco/leccion_1_1_1/index.html"/>
+      <file href="shared/scorm-wrapper.js"/>
+      <file href="shared/styles.css"/>
+    </resource>
+
+    <resource identifier="RES-eval_1_1" type="webcontent" adlcp:scormtype="sco"
+              href="sco/eval_1_1/index.html">
+      <file href="sco/eval_1_1/index.html"/>
+      <file href="shared/scorm-wrapper.js"/>
+    </resource>
+  </resources>
+</manifest>

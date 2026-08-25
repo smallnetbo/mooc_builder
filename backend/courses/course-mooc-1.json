@@ -1,0 +1,407 @@
+{
+  "id": "course-mooc-1",
+  "title": "Ley Marco de Autonomías y Descentralización",
+  "modules": [
+    {
+      "id": "mod-1",
+      "number": "Módulo 1",
+      "title": "Aspectos generales de la ley marco de autonomías",
+      "primaryColor": "#e11d48",
+      "coverImage": "https://seamovil.com/imagenes/photorealistic-lawyer-environment.jpg",
+      "objective": "La Ley N° 031 \"Andrés Ibáñez\", promulgada el 19 de julio de 2010, tiene como finalidad regular el régimen de autonomías por mandato constitucional y sentar las bases de la organización territorial del Estado Plurinacional de Bolivia.",
+      "children": [
+        {
+          "id": "topic-m1",
+          "type": "topic",
+          "title": "Unidad Principal",
+          "children": [
+            {
+              "id": "m1-l1",
+              "type": "lesson",
+              "title": "Introducción",
+              "subtitle": "ELEMENTO 1 DE 5",
+              "quoteBanner": {
+                "text": "La gestión empresarial en las Micro y pequeñas empresas (MyPE) permitirá dirigir estratégicamente el rumbo de la empresa hacia el crecimiento, la sostenibilidad y el cumplimiento de los objetivos empresariales.",
+                "bgImage": "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?q=80&w=1600&auto=format&fit=crop"
+              },
+              "blocks": [
+                {
+                  "id": "m1-b1",
+                  "kind": "text",
+                  "content": "Videoo:"
+                },
+                {
+                  "id": "m1-b2",
+                  "kind": "video",
+                  "content": {
+                    "url": "https://drive.google.com/file/d/1Jv6u0KCjxTonHzNXXSTjIM_gJKIXvPYE/view?usp=drive_link"
+                  }
+                }
+              ]
+            },
+            {
+              "id": "m1-l2",
+              "type": "lesson",
+              "title": "Elementos de la gestión empresarial",
+              "subtitle": "ELEMENTO 2 DE 5",
+              "blocks": [
+                {
+                  "id": "b-m1-2",
+                  "kind": "text",
+                  "content": "Conozca los pilares fundamentales de la gestión empresarial."
+                }
+              ]
+            },
+            {
+              "id": "m1-l3",
+              "type": "lesson",
+              "title": "Actividad",
+              "subtitle": "ELEMENTO 3 DE 5",
+              "blocks": [
+                {
+                  "id": "b-m1-3",
+                  "kind": "text",
+                  "content": "Desarrolle el ejercicio práctico de análisis empresarial."
+                }
+              ]
+            },
+            {
+              "id": "m1-l4",
+              "type": "assessment",
+              "title": "Evaluación",
+              "subtitle": "ELEMENTO 4 DE 5",
+              "passScore": 70,
+              "questions": []
+            },
+            {
+              "id": "m1-l5",
+              "type": "lesson",
+              "title": "Mensaje final",
+              "subtitle": "ELEMENTO 5 DE 5",
+              "blocks": [
+                {
+                  "id": "b-m1-5",
+                  "kind": "text",
+                  "content": "Mensaje de cierre del módulo 1."
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "mod-2",
+      "number": "Módulo 2",
+      "title": "Bases de la organización territorial del estado",
+      "primaryColor": "#f58220",
+      "coverImage": "https://images.unsplash.com/photo-1556761175-5973dc0f32e7?q=80&w=1600&auto=format&fit=crop",
+      "objective": "Comprender los conceptos fundamentales de la gestión financiera, reconociendo su importancia en la planeación, organización, dirección y control de los recursos financieros de una empresa.",
+      "children": [
+        {
+          "id": "topic-1",
+          "type": "topic",
+          "title": "Unidad Principal",
+          "children": [
+            {
+              "id": "les-1",
+              "type": "lesson",
+              "title": "Introducción",
+              "subtitle": "ELEMENTO 1 DE 5",
+              "quoteBanner": {
+                "text": "La gestión financiera hace referencia al proceso de planeación, organización, dirección y control de los recursos financieros de una empresa.",
+                "bgImage": "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?q=80&w=1600&auto=format&fit=crop"
+              },
+              "blocks": [
+                {
+                  "id": "b1",
+                  "kind": "text",
+                  "content": "Analice el siguiente video para que conozca más sobre la gestión financiera de las MyPE:"
+                },
+                {
+                  "id": "b2",
+                  "kind": "video",
+                  "content": {
+                    "url": "https://www.youtube.com/embed/dQw4w9WgXcQ",
+                    "caption": "Video explicativo: Introducción a la gestión financiera"
+                  }
+                }
+              ]
+            },
+            {
+              "id": "les-2",
+              "type": "lesson",
+              "title": "Elementos de la gestión financiera",
+              "subtitle": "ELEMENTO 2 DE 5",
+              "quoteBanner": {
+                "text": "El presupuesto, el flujo de caja y la estructura de costos son los cimientos esenciales de toda gestión financiera sostenible.",
+                "bgImage": "https://images.unsplash.com/photo-1460925895917-afdab827c52f?q=80&w=1600&auto=format&fit=crop"
+              },
+              "blocks": [
+                {
+                  "id": "b3",
+                  "kind": "text",
+                  "content": "Para lograr una adecuada gestión financiera es indispensable categorizar los ingresos fijos y variables, controlar los costos operativos y anticipar contingencias mediante un fondo de reserva."
+                }
+              ]
+            },
+            {
+              "id": "les-3",
+              "type": "lesson",
+              "title": "Actividad",
+              "subtitle": "ELEMENTO 3 DE 5",
+              "quoteBanner": {
+                "text": "Pon a prueba tus habilidades identificando el equilibrio financiero en un caso de estudio real de una MyPE.",
+                "bgImage": "https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?q=80&w=1600&auto=format&fit=crop"
+              },
+              "blocks": [
+                {
+                  "id": "b4",
+                  "kind": "text",
+                  "content": "Lea detalladamente el enunciado a continuación y prepare su propuesta de flujo de caja para el próximo trimestre."
+                }
+              ]
+            },
+            {
+              "id": "les-4",
+              "type": "assessment",
+              "title": "Evaluación",
+              "subtitle": "ELEMENTO 4 DE 5",
+              "passScore": 70,
+              "questions": [
+                {
+                  "id": "q1",
+                  "text": "¿Cuál es la función principal del flujo de caja en una MyPE?",
+                  "options": [
+                    {
+                      "id": "o1",
+                      "text": "Monitorear los ingresos y egresos efectivos de dinero en un periodo"
+                    },
+                    {
+                      "id": "o2",
+                      "text": "Calcular únicamente los impuestos anuales a la renta"
+                    },
+                    {
+                      "id": "o3",
+                      "text": "Diseñar el logotipo de la empresa"
+                    }
+                  ],
+                  "correctOptionId": "o1"
+                },
+                {
+                  "id": "q2",
+                  "text": "¿Qué abarca la gestión financiera según lo estudiado?",
+                  "options": [
+                    {
+                      "id": "o1",
+                      "text": "Planeación, organización, dirección y control de recursos financieros"
+                    },
+                    {
+                      "id": "o2",
+                      "text": "Gestión exclusiva de redes sociales"
+                    },
+                    {
+                      "id": "o3",
+                      "text": "Mantenimiento técnico de maquinaria"
+                    }
+                  ],
+                  "correctOptionId": "o1"
+                }
+              ]
+            },
+            {
+              "id": "les-5",
+              "type": "lesson",
+              "title": "Mensaje final",
+              "subtitle": "ELEMENTO 5 DE 5",
+              "quoteBanner": {
+                "text": "Una gestión financiera eficiente no solo protege la empresa, sino que impulsa su crecimiento y competitividad en el mercado.",
+                "bgImage": "https://images.unsplash.com/photo-1522071820081-009f0129c71c?q=80&w=1600&auto=format&fit=crop"
+              },
+              "blocks": [
+                {
+                  "id": "b5",
+                  "kind": "text",
+                  "content": "¡Felicidades por haber concluido exitosamente el Módulo 2! Continúe aplicando los formatos de registro contable en su emprendimiento."
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "mod-3",
+      "number": "Módulo 3",
+      "title": "Tipos de Autonomía",
+      "primaryColor": "#2563eb",
+      "coverImage": "https://images.unsplash.com/photo-1556761175-5973dc0f32e7?q=80&w=1600&auto=format&fit=crop",
+      "objective": "Comprender la estructura e importancia de los estados financieros como herramienta de toma de decisiones.",
+      "children": [
+        {
+          "id": "topic-m3",
+          "type": "topic",
+          "title": "Unidad Principal",
+          "children": [
+            {
+              "id": "m3-l1",
+              "type": "lesson",
+              "title": "Introducción",
+              "subtitle": "ELEMENTO 1 DE 6",
+              "quoteBanner": {
+                "text": "Los Estados Financieros son informes detallados y se utilizan como una herramienta para determinar el desempeño y la situación actual de una empresa.",
+                "bgImage": "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?q=80&w=1600&auto=format&fit=crop"
+              },
+              "blocks": [
+                {
+                  "id": "b-m3-1",
+                  "kind": "text",
+                  "content": "Analice el siguiente video para que conozca más sobre los estados financieros de las MyPE:"
+                }
+              ]
+            },
+            {
+              "id": "m3-l2",
+              "type": "lesson",
+              "title": "¿Para qué sirven los estados financieros?",
+              "subtitle": "ELEMENTO 2 DE 6",
+              "blocks": [
+                {
+                  "id": "b-m3-2",
+                  "kind": "text",
+                  "content": "Permiten evaluar la rentabilidad y liquidez del negocio."
+                }
+              ]
+            },
+            {
+              "id": "m3-l3",
+              "type": "lesson",
+              "title": "¿Cuáles son los elementos de los estados financieros?",
+              "subtitle": "ELEMENTO 3 DE 6",
+              "blocks": [
+                {
+                  "id": "b-m3-3",
+                  "kind": "text",
+                  "content": "Activos, pasivos, patrimonio, ingresos y gastos."
+                }
+              ]
+            },
+            {
+              "id": "m3-l4",
+              "type": "lesson",
+              "title": "Tipos de estados financieros",
+              "subtitle": "ELEMENTO 4 DE 6",
+              "blocks": [
+                {
+                  "id": "b-m3-4",
+                  "kind": "text",
+                  "content": "Balance general, estado de resultados, flujo de efectivo."
+                }
+              ]
+            },
+            {
+              "id": "m3-l5",
+              "type": "assessment",
+              "title": "Evaluación",
+              "subtitle": "ELEMENTO 5 DE 6",
+              "passScore": 70,
+              "questions": []
+            },
+            {
+              "id": "m3-l6",
+              "type": "lesson",
+              "title": "Mensaje final",
+              "subtitle": "ELEMENTO 6 DE 6",
+              "blocks": [
+                {
+                  "id": "b-m3-6",
+                  "kind": "text",
+                  "content": "Resumen final del Módulo 3."
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "mod-4",
+      "number": "Módulo 4",
+      "title": "Normas Institucionales Básicas",
+      "primaryColor": "#16a34a",
+      "coverImage": "https://images.unsplash.com/photo-1556761175-5973dc0f32e7?q=80&w=1600&auto=format&fit=crop",
+      "objective": "Profundizar en cada tipo de estado financiero y su utilidad práctica en las Micro y Pequeñas Empresas.",
+      "children": [
+        {
+          "id": "topic-m4",
+          "type": "topic",
+          "title": "Unidad Principal",
+          "children": [
+            {
+              "id": "m4-l1",
+              "type": "lesson",
+              "title": "Introducción",
+              "subtitle": "ELEMENTO 1 DE 10",
+              "blocks": [
+                {
+                  "id": "b-m4-1",
+                  "kind": "text",
+                  "content": "Introducción a la tipología de estados financieros."
+                }
+              ],
+              "quoteBanner": {
+                "text": ""
+              }
+            },
+            {
+              "id": "m4-l2",
+              "type": "lesson",
+              "title": "El Balance General",
+              "subtitle": "ELEMENTO 2 DE 10",
+              "blocks": [
+                {
+                  "id": "b-m4-2",
+                  "kind": "text",
+                  "content": "Análisis de activos y pasivos."
+                }
+              ]
+            },
+            {
+              "id": "m4-l3",
+              "type": "lesson",
+              "title": "Estado de resultados",
+              "subtitle": "ELEMENTO 3 DE 10",
+              "blocks": [
+                {
+                  "id": "b-m4-3",
+                  "kind": "text",
+                  "content": "Pérdidas y ganancias."
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "3qNo-4aP",
+      "type": "module",
+      "number": "Módulo 5",
+      "title": "Régimen competencial",
+      "primaryColor": "#7c3aed",
+      "coverImage": "https://images.unsplash.com/photo-1556761175-5973dc0f32e7?q=80&w=1600&auto=format&fit=crop",
+      "objective": "Describa aquí el objetivo principal del módulo.",
+      "children": []
+    },
+    {
+      "id": "bXUSVC20",
+      "type": "module",
+      "number": "Módulo 6",
+      "title": "Régimen Económico Financiero y Coordinación Gubernativa",
+      "primaryColor": "#0d9488",
+      "coverImage": "https://images.unsplash.com/photo-1556761175-5973dc0f32e7?q=80&w=1600&auto=format&fit=crop",
+      "objective": "Describa aquí el objetivo principal del módulo.",
+      "children": []
+    }
+  ]
+}
