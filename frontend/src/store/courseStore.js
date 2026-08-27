@@ -600,9 +600,69 @@ export const useCourseStore = create((set, get) => ({
 
   // --- Bloques de contenido ---
   addBlock: (lessonId, kind) => set((s) => {
+    let initialContent = '';
+    if (kind === 'text') {
+      initialContent = 'Escriba aquí el contenido explicativo de su lección.';
+    } else if (kind === 'video') {
+      initialContent = { url: '', caption: '' };
+    } else if (kind === 'accordion') {
+      initialContent = {
+        items: [
+          { id: nanoid(6), title: '1. Concepto Fundamental', content: 'Explicación detallada del primer concepto clave.' },
+          { id: nanoid(6), title: '2. Aplicación Práctica', content: 'Pasos o recomendaciones para aplicar este concepto.' }
+        ]
+      };
+    } else if (kind === 'flipcard') {
+      initialContent = {
+        cards: [
+          { id: nanoid(6), frontTitle: '¿Qué es la gestión financiera?', backContent: 'Es el proceso de planificar, organizar y controlar los recursos financieros para asegurar la rentabilidad.' },
+          { id: nanoid(6), frontTitle: '¿Qué es el Flujo de Caja?', backContent: 'Es el registro de las entradas y salidas de dinero en un periodo determinado.' }
+        ]
+      };
+    } else if (kind === 'timeline') {
+      initialContent = {
+        steps: [
+          { id: nanoid(6), title: 'Paso 1: Diagnóstico Inicial', description: 'Evalúe el estado financiero y operativo actual.' },
+          { id: nanoid(6), title: 'Paso 2: Presupuestación', description: 'Proyecte los ingresos y egresos esperados.' },
+          { id: nanoid(6), title: 'Paso 3: Monitoreo', description: 'Supervise periódicamente las desviaciones presupuestarias.' }
+        ]
+      };
+    } else if (kind === 'callout') {
+      initialContent = {
+        type: 'tip',
+        title: 'Consejo Práctico',
+        text: 'Lleve un registro diario de las ventas e ingresos para evitar sorpresas al final del mes.'
+      };
+    } else if (kind === 'gallery') {
+      initialContent = {
+        images: [
+          { id: nanoid(6), url: 'https://images.unsplash.com/photo-1556761175-5973dc0f32e7?q=80&w=1200', caption: 'Figura 1: Análisis de resultados en equipo' },
+          { id: nanoid(6), url: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?q=80&w=1200', caption: 'Figura 2: Planificación estratégica de metas' }
+        ]
+      };
+    } else if (kind === 'resource') {
+      initialContent = {
+        fileTitle: 'Plantilla de Flujo de Caja en Excel',
+        fileUrl: 'https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf',
+        fileType: 'XLSX',
+        fileSize: '450 KB',
+        description: 'Descargue esta plantilla editable para organizar las finanzas de su negocio.'
+      };
+    } else if (kind === 'knowledge_check') {
+      initialContent = {
+        question: '¿Cuál es el objetivo principal del Balance General en una MyPE?',
+        options: [
+          { id: nanoid(6), text: 'Mostrar los activos, pasivos y patrimonio en un momento determinado.', isCorrect: true },
+          { id: nanoid(6), text: 'Registrar únicamente las ventas en efectivo del día.', isCorrect: false },
+          { id: nanoid(6), text: 'Calcular el impuesto sobre la renta anual.', isCorrect: false }
+        ],
+        explanation: 'El Balance General proporciona una foto fija de la situación financiera de la empresa, mostrando lo que tiene (activos) y lo que debe (pasivos).'
+      };
+    }
+
     const newCourse = updateLesson(s.course, lessonId, (lesson) => ({
       ...lesson,
-      blocks: [...(lesson.blocks || []), { id: nanoid(8), kind, content: kind === 'text' ? '' : { url: '', caption: '' } }],
+      blocks: [...(lesson.blocks || []), { id: nanoid(8), kind, content: initialContent }],
     }));
     return pushCourseChange(s, newCourse);
   }),

@@ -1,4 +1,3 @@
-// ModulePlayerView.jsx — Pantalla de reproducción de contenido del módulo (Captura 2)
 import React, { useState } from 'react';
 import { useCourseStore, getAllLessons } from '../store/courseStore';
 import ModuleCoverView from './ModuleCoverView';
@@ -12,9 +11,341 @@ import {
   FileText,
   HelpCircle,
   ChevronRight,
-  Layers
+  Layers,
+  RefreshCw,
+  AlertCircle,
+  Lightbulb,
+  AlertTriangle,
+  Briefcase,
+  Download,
+  ChevronDown,
+  ChevronLeft,
+  Image as ImageIcon
 } from 'lucide-react';
 import QuizRunner from './QuizRunner';
+
+function StudentAccordion({ block, themeColor }) {
+  const items = block.content?.items || [];
+  const [openIds, setOpenIds] = useState(items[0] ? [items[0].id] : []);
+
+  const toggle = (id) => {
+    setOpenIds((prev) =>
+      prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]
+    );
+  };
+
+  return (
+    <div className="space-y-2 border border-slate-200 rounded-xl p-2 bg-white shadow-2xs">
+      {items.map((item) => {
+        const isOpen = openIds.includes(item.id);
+        return (
+          <div key={item.id} className="border border-slate-200 rounded-lg overflow-hidden transition-all">
+            <button
+              onClick={() => toggle(item.id)}
+              className="w-full flex items-center justify-between p-3.5 bg-slate-50 hover:bg-slate-100 text-left transition-colors cursor-pointer"
+            >
+              <span className="text-xs sm:text-sm font-bold text-slate-800">{item.title}</span>
+              <ChevronDown
+                size={16}
+                className={`text-slate-500 transition-transform duration-300 ${isOpen ? 'rotate-180' : ''}`}
+                style={isOpen ? { color: themeColor } : {}}
+              />
+            </button>
+            {isOpen && (
+              <div className="p-4 bg-white text-xs sm:text-sm text-slate-700 leading-relaxed border-t border-slate-100">
+                {item.content}
+              </div>
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+function StudentFlipCards({ block, themeColor }) {
+  const [flippedIds, setFlippedIds] = useState([]);
+  const cards = block.content?.cards || [];
+
+  const toggleFlip = (id) => {
+    setFlippedIds((prev) =>
+      prev.includes(id) ? prev.filter((c) => c !== id) : [...prev, id]
+    );
+  };
+
+  return (
+    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+      {cards.map((card) => {
+        const isFlipped = flippedIds.includes(card.id);
+        return (
+          <div
+            key={card.id}
+            onClick={() => toggleFlip(card.id)}
+            className="h-44 cursor-pointer group"
+            style={{ perspective: '1000px' }}
+          >
+            <div
+              className={`relative w-full h-full rounded-xl transition-all duration-500 shadow-md ${
+                isFlipped ? '[transform:rotateY(180deg)]' : ''
+              }`}
+              style={{ transformStyle: 'preserve-3d' }}
+            >
+              {/* Cara Frontal */}
+              <div
+                className="absolute inset-0 rounded-xl p-5 flex flex-col justify-between items-center text-center text-white shadow-sm [backface-visibility:hidden]"
+                style={{ backgroundColor: themeColor }}
+              >
+                <div className="w-full flex justify-end">
+                  <RefreshCw size={14} className="opacity-70 group-hover:rotate-180 transition-transform duration-500" />
+                </div>
+                <h4 className="text-sm sm:text-base font-extrabold px-2">{card.frontTitle}</h4>
+                <span className="text-[10px] font-bold tracking-wider uppercase opacity-80">
+                  Haz clic para voltear ↺
+                </span>
+              </div>
+
+              {/* Cara Posterior */}
+              <div
+                className="absolute inset-0 rounded-xl p-5 flex flex-col justify-between items-center text-center bg-slate-900 text-white shadow-sm [transform:rotateY(180deg)] [backface-visibility:hidden]"
+              >
+                <div className="w-full flex justify-end">
+                  <RefreshCw size={14} className="opacity-70" />
+                </div>
+                <p className="text-xs sm:text-sm font-medium leading-relaxed overflow-y-auto max-h-24">
+                  {card.backContent}
+                </p>
+                <span className="text-[10px] font-bold tracking-wider uppercase opacity-60">
+                  Volver al frente ↺
+                </span>
+              </div>
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+function StudentTimeline({ block, themeColor }) {
+  const steps = block.content?.steps || [];
+  return (
+    <div className="space-y-4 relative border-l-2 pl-6 ml-3 my-4" style={{ borderColor: `${themeColor}40` }}>
+      {steps.map((step, idx) => (
+        <div key={step.id} className="relative bg-white border border-slate-200 rounded-xl p-4 shadow-xs space-y-1">
+          <div
+            className="absolute -left-[33px] top-4 w-5 h-5 rounded-full text-white text-[10px] font-bold flex items-center justify-center shadow-xs"
+            style={{ backgroundColor: themeColor }}
+          >
+            {idx + 1}
+          </div>
+          <h4 className="text-xs sm:text-sm font-bold text-slate-800">{step.title}</h4>
+          <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">{step.description}</p>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function StudentCallout({ block }) {
+  const content = block.content || {};
+  const type = content.type || 'tip';
+
+  const configMap = {
+    tip: { icon: Lightbulb, color: 'text-emerald-700', border: 'border-emerald-200', bg: 'bg-emerald-50/80' },
+    important: { icon: AlertCircle, color: 'text-blue-700', border: 'border-blue-200', bg: 'bg-blue-50/80' },
+    warning: { icon: AlertTriangle, color: 'text-amber-700', border: 'border-amber-200', bg: 'bg-amber-50/80' },
+    example: { icon: Briefcase, color: 'text-purple-700', border: 'border-purple-200', bg: 'bg-purple-50/80' }
+  };
+
+  const cfg = configMap[type] || configMap.tip;
+  const IconComp = cfg.icon;
+
+  return (
+    <div className={`border rounded-xl p-4 sm:p-5 ${cfg.border} ${cfg.bg} space-y-2 shadow-xs`}>
+      <div className="flex items-center space-x-2">
+        <IconComp size={18} className={cfg.color} />
+        <h4 className={`text-xs sm:text-sm font-bold ${cfg.color}`}>{content.title}</h4>
+      </div>
+      <p className="text-xs sm:text-sm text-slate-700 leading-relaxed pl-6">{content.text}</p>
+    </div>
+  );
+}
+
+function StudentGallery({ block, themeColor }) {
+  const [currIdx, setCurrIdx] = useState(0);
+  const images = block.content?.images || [];
+
+  if (images.length === 0) return null;
+
+  const currentImg = images[currIdx] || images[0];
+
+  const prev = () => setCurrIdx((i) => (i === 0 ? images.length - 1 : i - 1));
+  const next = () => setCurrIdx((i) => (i === images.length - 1 ? 0 : i + 1));
+
+  return (
+    <div className="bg-slate-900 rounded-xl overflow-hidden shadow-lg text-white space-y-2 p-4">
+      <div className="relative aspect-video w-full rounded-lg overflow-hidden bg-black flex items-center justify-center">
+        <img
+          src={currentImg.url}
+          alt={currentImg.caption}
+          className="w-full h-full object-contain"
+        />
+        {images.length > 1 && (
+          <>
+            <button
+              onClick={prev}
+              className="absolute left-2 top-1/2 -translate-y-1/2 p-2 rounded-full bg-black/50 hover:bg-black/80 text-white cursor-pointer transition-colors"
+            >
+              <ChevronLeft size={16} />
+            </button>
+            <button
+              onClick={next}
+              className="absolute right-2 top-1/2 -translate-y-1/2 p-2 rounded-full bg-black/50 hover:bg-black/80 text-white cursor-pointer transition-colors"
+            >
+              <ChevronRight size={16} />
+            </button>
+          </>
+        )}
+      </div>
+      <div className="flex items-center justify-between text-xs text-slate-300 pt-1">
+        <p className="font-semibold italic">{currentImg.caption}</p>
+        <span className="font-bold tracking-widest text-[10px] text-white/70">
+          {currIdx + 1} / {images.length}
+        </span>
+      </div>
+    </div>
+  );
+}
+
+function StudentResource({ block, themeColor }) {
+  const content = block.content || {};
+  return (
+    <div className="bg-white border border-slate-200 rounded-xl p-4 sm:p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-sm">
+      <div className="flex items-start space-x-3.5">
+        <div
+          className="w-10 h-10 rounded-lg text-white font-black text-xs flex items-center justify-center shrink-0 shadow-xs"
+          style={{ backgroundColor: themeColor }}
+        >
+          {content.fileType || 'FILE'}
+        </div>
+        <div className="space-y-0.5">
+          <h4 className="text-xs sm:text-sm font-bold text-slate-900">{content.fileTitle}</h4>
+          <p className="text-xs text-slate-500 leading-snug">{content.description}</p>
+          {content.fileSize && (
+            <span className="inline-block text-[10px] font-semibold text-slate-400">
+              Tamaño: {content.fileSize}
+            </span>
+          )}
+        </div>
+      </div>
+      <a
+        href={content.fileUrl || '#'}
+        target="_blank"
+        rel="noopener noreferrer"
+        download
+        className="text-xs font-bold text-white px-4 py-2 rounded-lg flex items-center space-x-2 shrink-0 hover:opacity-90 transition-opacity cursor-pointer shadow-xs"
+        style={{ backgroundColor: themeColor }}
+      >
+        <Download size={14} />
+        <span>Descargar</span>
+      </a>
+    </div>
+  );
+}
+
+function StudentKnowledgeCheck({ block, themeColor }) {
+  const content = block.content || {};
+  const [selectedOptId, setSelectedOptId] = useState(null);
+  const [submitted, setSubmitted] = useState(false);
+
+  const options = content.options || [];
+
+  const handleCheck = () => {
+    if (!selectedOptId) return;
+    setSubmitted(true);
+  };
+
+  const selectedOpt = options.find((o) => o.id === selectedOptId);
+
+  return (
+    <div className="bg-white border border-slate-200 rounded-xl p-5 sm:p-6 shadow-sm space-y-4">
+      <div className="flex items-center space-x-2 text-xs font-bold uppercase tracking-wider text-slate-400">
+        <HelpCircle size={15} style={{ color: themeColor }} />
+        <span>Comprobación Rápida de Conocimiento</span>
+      </div>
+
+      <h3 className="text-sm sm:text-base font-bold text-slate-900">{content.question}</h3>
+
+      <div className="space-y-2">
+        {options.map((opt) => {
+          const isSelected = selectedOptId === opt.id;
+          let optStyle = 'border-slate-200 bg-slate-50 hover:bg-slate-100 text-slate-700';
+
+          if (submitted) {
+            if (opt.isCorrect) {
+              optStyle = 'border-emerald-500 bg-emerald-50 text-emerald-900 font-semibold';
+            } else if (isSelected && !opt.isCorrect) {
+              optStyle = 'border-rose-500 bg-rose-50 text-rose-900';
+            }
+          } else if (isSelected) {
+            optStyle = 'border-slate-900 bg-slate-900 text-white font-semibold';
+          }
+
+          return (
+            <label
+              key={opt.id}
+              onClick={() => !submitted && setSelectedOptId(opt.id)}
+              className={`flex items-center space-x-3 p-3 rounded-lg border text-xs sm:text-sm cursor-pointer transition-all ${optStyle}`}
+            >
+              <input
+                type="radio"
+                name={`kc_opt_${block.id}`}
+                checked={isSelected}
+                onChange={() => {}}
+                disabled={submitted}
+                className="hidden"
+              />
+              <div
+                className={`w-4 h-4 rounded-full border-2 flex items-center justify-center shrink-0 ${
+                  isSelected ? 'border-white' : 'border-slate-400'
+                }`}
+              >
+                {isSelected && <div className="w-1.5 h-1.5 rounded-full bg-current" />}
+              </div>
+              <span className="flex-1">{opt.text}</span>
+            </label>
+          );
+        })}
+      </div>
+
+      {!submitted ? (
+        <button
+          onClick={handleCheck}
+          disabled={!selectedOptId}
+          style={{ backgroundColor: themeColor }}
+          className={`text-xs font-bold text-white px-5 py-2.5 rounded-lg tracking-wider uppercase transition-opacity cursor-pointer ${
+            !selectedOptId ? 'opacity-50 cursor-not-allowed' : 'hover:brightness-105 shadow-sm'
+          }`}
+        >
+          Comprobar Respuesta
+        </button>
+      ) : (
+        <div
+          className={`p-4 rounded-lg text-xs sm:text-sm space-y-1 ${
+            selectedOpt?.isCorrect
+              ? 'bg-emerald-50 border border-emerald-200 text-emerald-900'
+              : 'bg-rose-50 border border-rose-200 text-rose-900'
+          }`}
+        >
+          <p className="font-bold">
+            {selectedOpt?.isCorrect ? '¡Correcto! 🎉' : 'Respuesta Incorrecta'}
+          </p>
+          <p className="leading-relaxed">{content.explanation}</p>
+        </div>
+      )}
+    </div>
+  );
+}
 
 export default function ModulePlayerView() {
   const {
@@ -274,6 +605,34 @@ export default function ModulePlayerView() {
                               </div>
                             )}
                           </div>
+                        )}
+
+                        {block.kind === 'accordion' && (
+                          <StudentAccordion block={block} themeColor={themeColor} />
+                        )}
+
+                        {block.kind === 'flipcard' && (
+                          <StudentFlipCards block={block} themeColor={themeColor} />
+                        )}
+
+                        {block.kind === 'timeline' && (
+                          <StudentTimeline block={block} themeColor={themeColor} />
+                        )}
+
+                        {block.kind === 'callout' && (
+                          <StudentCallout block={block} />
+                        )}
+
+                        {block.kind === 'gallery' && (
+                          <StudentGallery block={block} themeColor={themeColor} />
+                        )}
+
+                        {block.kind === 'resource' && (
+                          <StudentResource block={block} themeColor={themeColor} />
+                        )}
+
+                        {block.kind === 'knowledge_check' && (
+                          <StudentKnowledgeCheck block={block} themeColor={themeColor} />
                         )}
                       </div>
                     ))}

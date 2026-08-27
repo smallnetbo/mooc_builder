@@ -517,6 +517,75 @@ function generateStandalonePlayerHTML(course) {
     }
     .quiz-opt:hover { background-color: #f8fafc; }
     .quiz-opt input { margin-right: 12px; accent-color: var(--primary-orange); }
+
+    /* ACCORDION */
+    .scorm-accordion { margin-bottom: 24px; display: flex; flex-direction: column; gap: 8px; }
+    .acc-item { border: 1px solid #e2e8f0; border-radius: 8px; overflow: hidden; background: #fff; }
+    .acc-header { width: 100%; display: flex; align-items: center; justify-content: space-between; padding: 14px 18px; background: #f8fafc; font-weight: 700; font-size: 13.5px; color: #1e293b; border: none; cursor: pointer; text-align: left; }
+    .acc-header:hover { background: #f1f5f9; }
+    .acc-icon { font-size: 11px; color: #64748b; }
+    .acc-body { padding: 16px 18px; font-size: 13.5px; line-height: 1.6; color: #334155; border-top: 1px solid #f1f5f9; }
+
+    /* FLIP CARDS 3D */
+    .scorm-flipcards-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; margin-bottom: 24px; }
+    .flipcard-wrapper { height: 180px; perspective: 1000px; cursor: pointer; }
+    .flipcard-inner { position: relative; width: 100%; height: 100%; border-radius: 12px; transition: transform 0.6s; transform-style: preserve-3d; box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
+    .flipcard-wrapper.flipped .flipcard-inner { transform: rotateY(180deg); }
+    .flipcard-front, .flipcard-back { position: absolute; inset: 0; border-radius: 12px; padding: 20px; display: flex; flex-direction: column; justify-content: space-between; text-align: center; backface-visibility: hidden; -webkit-backface-visibility: hidden; }
+    .flipcard-front { background: var(--primary-orange); color: #fff; }
+    .flipcard-front h4 { font-size: 15px; font-weight: 800; line-height: 1.4; margin: auto 0; }
+    .flipcard-back { background: #0f172a; color: #fff; transform: rotateY(180deg); }
+    .flipcard-back p { font-size: 13px; font-weight: 500; line-height: 1.5; margin: auto 0; max-height: 110px; overflow-y: auto; }
+    .flip-hint { font-size: 10px; font-weight: 800; letter-spacing: 0.1em; opacity: 0.75; text-transform: uppercase; }
+
+    /* TIMELINE */
+    .scorm-timeline { margin: 20px 0 24px 16px; border-left: 2px solid rgba(245, 130, 32, 0.4); padding-left: 24px; display: flex; flex-direction: column; gap: 16px; }
+    .timeline-step { position: relative; background: #fff; border: 1px solid #e2e8f0; border-radius: 10px; padding: 16px; box-shadow: 0 2px 6px rgba(0,0,0,0.03); }
+    .timeline-badge { position: absolute; left: -36px; top: 16px; width: 22px; height: 22px; border-radius: 50%; background: var(--primary-orange); color: #fff; font-size: 10px; font-weight: 800; display: flex; align-items: center; justify-content: center; }
+    .timeline-step h4 { font-size: 14px; font-weight: 700; color: #0f172a; margin-bottom: 4px; }
+    .timeline-step p { font-size: 13px; color: #475569; line-height: 1.5; }
+
+    /* CALLOUT BOXES */
+    .scorm-callout { border-radius: 10px; padding: 18px 20px; margin-bottom: 24px; border: 1px solid; display: flex; flex-direction: column; gap: 6px; }
+    .callout-tip { background: #f0fdf4; border-color: #bbf7d0; color: #166534; }
+    .callout-important { background: #eff6ff; border-color: #bfdbfe; color: #1e40af; }
+    .callout-warning { background: #fffbeb; border-color: #fde68a; color: #92400e; }
+    .callout-example { background: #faf5ff; border-color: #e9d5ff; color: #6b21a8; }
+    .callout-title { font-size: 13px; font-weight: 800; letter-spacing: 0.05em; text-transform: uppercase; }
+    .callout-text { font-size: 13.5px; line-height: 1.55; color: #334155; }
+
+    /* GALLERY */
+    .scorm-gallery { background: #0f172a; border-radius: 12px; overflow: hidden; padding: 16px; margin-bottom: 24px; color: #fff; }
+    .gallery-slide img { width: 100%; max-height: 380px; object-fit: contain; border-radius: 8px; background: #000; }
+    .gallery-caption { font-size: 12px; font-style: italic; color: #cbd5e1; margin-top: 8px; text-align: center; }
+    .gallery-controls { display: flex; align-items: center; justify-content: space-between; margin-top: 12px; padding-top: 8px; border-top: 1px solid #1e293b; }
+    .gallery-btn { background: #1e293b; color: #fff; border: 1px solid #334155; border-radius: 6px; padding: 6px 14px; font-size: 12px; font-weight: 700; cursor: pointer; }
+    .gallery-btn:hover { background: #334155; }
+    .gallery-counter { font-size: 11px; font-weight: 800; color: #94a3b8; }
+
+    /* RESOURCE DOWNLOAD CARD */
+    .scorm-resource-card { background: #fff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 18px 20px; display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 24px; box-shadow: 0 2px 8px rgba(0,0,0,0.04); }
+    .resource-icon { width: 44px; height: 44px; border-radius: 10px; background: var(--primary-orange); color: #fff; font-size: 11px; font-weight: 900; display: flex; align-items: center; justify-content: center; text-transform: uppercase; flex-shrink: 0; }
+    .resource-info { flex: 1; }
+    .resource-info h4 { font-size: 14px; font-weight: 700; color: #0f172a; margin-bottom: 2px; }
+    .resource-info p { font-size: 12.5px; color: #64748b; line-height: 1.4; }
+    .resource-size { font-size: 10px; font-weight: 700; color: #94a3b8; display: inline-block; margin-top: 4px; }
+    .btn-resource-dl { background: var(--primary-orange); color: #fff; text-decoration: none; font-size: 12px; font-weight: 800; padding: 10px 18px; border-radius: 8px; white-space: nowrap; transition: opacity 0.15s; }
+    .btn-resource-dl:hover { opacity: 0.9; }
+
+    /* KNOWLEDGE CHECK (TRIVIA) */
+    .scorm-kc-card { background: #fff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 22px; margin-bottom: 24px; box-shadow: 0 2px 8px rgba(0,0,0,0.04); display: flex; flex-direction: column; gap: 14px; }
+    .kc-badge { font-size: 10px; font-weight: 800; letter-spacing: 0.1em; color: var(--primary-orange); text-transform: uppercase; }
+    .kc-question { font-size: 15px; font-weight: 800; color: #0f172a; line-height: 1.4; }
+    .kc-options { display: flex; flex-direction: column; gap: 8px; }
+    .kc-opt-label { display: flex; align-items: center; padding: 12px 16px; border: 1px solid #cbd5e1; border-radius: 8px; cursor: pointer; font-size: 13.5px; transition: background 0.15s; }
+    .kc-opt-label:hover { background: #f8fafc; }
+    .kc-opt-label input { margin-right: 12px; accent-color: var(--primary-orange); }
+    .btn-kc-check { background: var(--primary-orange); color: #fff; border: none; font-size: 12px; font-weight: 800; letter-spacing: 0.05em; text-transform: uppercase; padding: 11px 20px; border-radius: 6px; cursor: pointer; align-self: flex-start; }
+    .btn-kc-check:hover { background-color: var(--primary-orange-hover); }
+    .kc-result { padding: 14px 16px; border-radius: 8px; font-size: 13px; line-height: 1.5; font-weight: 600; margin-top: 4px; }
+    .kc-result.correct { background: #f0fdf4; border: 1px solid #bbf7d0; color: #166534; }
+    .kc-result.incorrect { background: #fef2f2; border: 1px solid #fecaca; color: #991b1b; }
   </style>
 </head>
 <body onload="initApp()" onunload="ScormWrapper.terminate()">
@@ -1005,9 +1074,9 @@ function generateStandalonePlayerHTML(course) {
         if (curLesson.type === 'assessment') {
           contentHtml = renderQuizFormHTML(curLesson);
         } else {
-          (curLesson.blocks || []).forEach(b => {
+          (curLesson.blocks || []).forEach((b, bIdx) => {
             if (b.kind === 'text') {
-              contentHtml += '<div class="block-text-p">' + (b.content || '') + '</div>';
+              contentHtml += '<div class="block-text-p">' + escapeHtml(b.content || '') + '</div>';
             } else if (b.kind === 'video') {
               const rawUrl = typeof b.content === 'object' ? b.content.url : b.content;
               const embedUrl = formatEmbedUrl(rawUrl);
@@ -1016,6 +1085,108 @@ function generateStandalonePlayerHTML(course) {
               } else {
                 contentHtml += '<div class="block-video-box"><div class="video-placeholder" style="background-image: url(https://images.unsplash.com/photo-1573497019940-1c28c88b4f3e?q=80&w=1200)"><div class="play-btn-circle"><svg width="24" height="24" viewBox="0 0 24 24" fill="white"><polygon points="5 3 19 12 5 21 5 3"/></svg></div></div></div>';
               }
+            } else if (b.kind === 'accordion') {
+              const items = b.content && Array.isArray(b.content.items) ? b.content.items : [];
+              let accHtml = '<div class="scorm-accordion">';
+              items.forEach((item, idx) => {
+                accHtml += '<div class="acc-item">' +
+                  '<button type="button" class="acc-header" onclick="toggleAccordionItem(this)">' +
+                    '<span>' + escapeHtml(item.title || '') + '</span>' +
+                    '<span class="acc-icon">' + (idx === 0 ? '▲' : '▼') + '</span>' +
+                  '</button>' +
+                  '<div class="acc-body" style="display:' + (idx === 0 ? 'block' : 'none') + ';">' + escapeHtml(item.content || '') + '</div>' +
+                '</div>';
+              });
+              accHtml += '</div>';
+              contentHtml += accHtml;
+            } else if (b.kind === 'flipcard') {
+              const cards = b.content && Array.isArray(b.content.cards) ? b.content.cards : [];
+              let flipHtml = '<div class="scorm-flipcards-grid">';
+              cards.forEach(c => {
+                flipHtml += '<div class="flipcard-wrapper" onclick="toggleFlipCard(this)">' +
+                  '<div class="flipcard-inner">' +
+                    '<div class="flipcard-front">' +
+                      '<div class="flip-hint">VOLTEAR ↺</div>' +
+                      '<h4>' + escapeHtml(c.frontTitle || '') + '</h4>' +
+                    '</div>' +
+                    '<div class="flipcard-back">' +
+                      '<div class="flip-hint">REVERSO ↺</div>' +
+                      '<p>' + escapeHtml(c.backContent || '') + '</p>' +
+                    '</div>' +
+                  '</div>' +
+                '</div>';
+              });
+              flipHtml += '</div>';
+              contentHtml += flipHtml;
+            } else if (b.kind === 'timeline') {
+              const steps = b.content && Array.isArray(b.content.steps) ? b.content.steps : [];
+              let timeHtml = '<div class="scorm-timeline">';
+              steps.forEach((s, idx) => {
+                timeHtml += '<div class="timeline-step">' +
+                  '<div class="timeline-badge">' + (idx + 1) + '</div>' +
+                  '<h4>' + escapeHtml(s.title || '') + '</h4>' +
+                  '<p>' + escapeHtml(s.description || '') + '</p>' +
+                '</div>';
+              });
+              timeHtml += '</div>';
+              contentHtml += timeHtml;
+            } else if (b.kind === 'callout') {
+              const c = b.content || {};
+              const type = c.type || 'tip';
+              const titles = { tip: '💡 CONSEJO PRÁCTICO', important: '📌 NOTA IMPORTANTE', warning: '⚠️ ALERTA', example: '🏢 CASO PRÁCTICO' };
+              contentHtml += '<div class="scorm-callout callout-' + type + '">' +
+                '<h4 class="callout-title">' + (escapeHtml(c.title) || titles[type] || 'DESTACADO') + '</h4>' +
+                '<p class="callout-text">' + escapeHtml(c.text || '') + '</p>' +
+              '</div>';
+            } else if (b.kind === 'gallery') {
+              const images = b.content && Array.isArray(b.content.images) ? b.content.images : [];
+              if (images.length > 0) {
+                let galHtml = '<div class="scorm-gallery" data-current="0" data-total="' + images.length + '">';
+                images.forEach((img, idx) => {
+                  galHtml += '<div class="gallery-slide" style="display:' + (idx === 0 ? 'block' : 'none') + ';">' +
+                    '<img src="' + escapeHtml(img.url || '') + '" alt="slide">' +
+                    '<p class="gallery-caption">' + escapeHtml(img.caption || '') + '</p>' +
+                  '</div>';
+                });
+                if (images.length > 1) {
+                  galHtml += '<div class="gallery-controls">' +
+                    '<button type="button" class="gallery-btn" onclick="navigateGallery(this, -1)">‹ Anterior</button>' +
+                    '<span class="gallery-counter">1 / ' + images.length + '</span>' +
+                    '<button type="button" class="gallery-btn" onclick="navigateGallery(this, 1)">Siguiente ›</button>' +
+                  '</div>';
+                }
+                galHtml += '</div>';
+                contentHtml += galHtml;
+              }
+            } else if (b.kind === 'resource') {
+              const r = b.content || {};
+              contentHtml += '<div class="scorm-resource-card">' +
+                '<div class="resource-icon">' + escapeHtml(r.fileType || 'DOC') + '</div>' +
+                '<div class="resource-info">' +
+                  '<h4>' + escapeHtml(r.fileTitle || '') + '</h4>' +
+                  '<p>' + escapeHtml(r.description || '') + '</p>' +
+                  (r.fileSize ? '<span class="resource-size">Tamaño: ' + escapeHtml(r.fileSize) + '</span>' : '') +
+                '</div>' +
+                '<a href="' + escapeHtml(r.fileUrl || '#') + '" target="_blank" download class="btn-resource-dl">Descargar</a>' +
+              '</div>';
+            } else if (b.kind === 'knowledge_check') {
+              const kc = b.content || {};
+              const options = Array.isArray(kc.options) ? kc.options : [];
+              let kcHtml = '<div class="scorm-kc-card" data-explanation="' + escapeHtml(kc.explanation || '') + '">' +
+                '<div class="kc-badge">COMPROBACIÓN RÁPIDA DE CONOCIMIENTO</div>' +
+                '<h4 class="kc-question">' + escapeHtml(kc.question || '') + '</h4>' +
+                '<div class="kc-options">';
+              options.forEach((opt) => {
+                kcHtml += '<label class="kc-opt-label">' +
+                  '<input type="radio" name="kc_opt_' + bIdx + '" value="' + (opt.isCorrect ? '1' : '0') + '"> ' +
+                  '<span>' + escapeHtml(opt.text || '') + '</span>' +
+                '</label>';
+              });
+              kcHtml += '</div>' +
+                '<button type="button" class="btn-kc-check" onclick="checkTriviaAnswer(this)">Comprobar Respuesta</button>' +
+                '<div class="kc-result" style="display:none;"></div>' +
+              '</div>';
+              contentHtml += kcHtml;
             }
           });
         }
@@ -1082,6 +1253,58 @@ function generateStandalonePlayerHTML(course) {
             '<div style="font-size:13px; margin-bottom:14px;">Requieres al menos un ' + passScore + '% para aprobar. Revisa las lecciones e inténtalo nuevamente.</div>' +
             '<button type="button" class="btn-player-continue" onclick="renderMainView()" style="background:#64748b;">REINTENTAR CUESTIONARIO</button>';
         }
+      }
+    }
+
+    function toggleAccordionItem(btn) {
+      const item = btn.closest('.acc-item');
+      if (!item) return;
+      const body = item.querySelector('.acc-body');
+      const icon = item.querySelector('.acc-icon');
+      const isVisible = body.style.display === 'block';
+      body.style.display = isVisible ? 'none' : 'block';
+      if (icon) icon.textContent = isVisible ? '▼' : '▲';
+    }
+
+    function toggleFlipCard(cardEl) {
+      cardEl.classList.toggle('flipped');
+    }
+
+    function navigateGallery(btn, dir) {
+      const gal = btn.closest('.scorm-gallery');
+      if (!gal) return;
+      let curr = parseInt(gal.getAttribute('data-current') || '0', 10);
+      const total = parseInt(gal.getAttribute('data-total') || '1', 10);
+      const slides = gal.querySelectorAll('.gallery-slide');
+      
+      slides[curr].style.display = 'none';
+      curr = (curr + dir + total) % total;
+      slides[curr].style.display = 'block';
+      gal.setAttribute('data-current', curr);
+      
+      const counter = gal.querySelector('.gallery-counter');
+      if (counter) counter.textContent = (curr + 1) + ' / ' + total;
+    }
+
+    function checkTriviaAnswer(btn) {
+      const card = btn.closest('.scorm-kc-card');
+      if (!card) return;
+      const selected = card.querySelector('input[type="radio"]:checked');
+      const resBox = card.querySelector('.kc-result');
+      if (!resBox) return;
+      if (!selected) {
+        alert('Por favor seleccione una opción.');
+        return;
+      }
+      const isCorrect = selected.value === '1';
+      const explanation = card.getAttribute('data-explanation') || '';
+      resBox.style.display = 'block';
+      if (isCorrect) {
+        resBox.className = 'kc-result correct';
+        resBox.innerHTML = '<strong>¡Correcto! 🎉</strong><br>' + escapeHtml(explanation);
+      } else {
+        resBox.className = 'kc-result incorrect';
+        resBox.innerHTML = '<strong>Respuesta Incorrecta</strong><br>' + escapeHtml(explanation);
       }
     }
   </script>

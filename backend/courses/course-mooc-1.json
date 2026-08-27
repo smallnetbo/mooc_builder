@@ -404,7 +404,143 @@
                 "text": "Añada una cita o idea clave resaltada para esta lección.",
                 "bgImage": "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?q=80&w=1600&auto=format&fit=crop"
               },
-              "blocks": []
+              "blocks": [
+                {
+                  "id": "I3JdINCR",
+                  "kind": "flipcard",
+                  "content": {
+                    "cards": [
+                      {
+                        "id": "phw7zA",
+                        "frontTitle": "¿Qué es la gestión financiera?",
+                        "backContent": "Es el proceso de planificar, organizar y controlar los recursos financieros para asegurar la rentabilidad."
+                      },
+                      {
+                        "id": "3ZEBug",
+                        "frontTitle": "¿Qué es el Flujo de Caja?",
+                        "backContent": "Es el registro de las entradas y salidas de dinero en un periodo determinado."
+                      }
+                    ]
+                  }
+                },
+                {
+                  "id": "3xirhMvs",
+                  "kind": "callout",
+                  "content": {
+                    "type": "tip",
+                    "title": "Consejo Práctico",
+                    "text": "Lleve un registro diario de las ventas e ingresos para evitar sorpresas al final del mes."
+                  }
+                },
+                {
+                  "id": "1nssc141",
+                  "kind": "text",
+                  "content": "Escriba aquí el contenido explicativo de su lección."
+                },
+                {
+                  "id": "Hvk9qBOp",
+                  "kind": "video",
+                  "content": {
+                    "url": "",
+                    "caption": ""
+                  }
+                },
+                {
+                  "id": "RK_Fce5B",
+                  "kind": "accordion",
+                  "content": {
+                    "items": [
+                      {
+                        "id": "sdYB_u",
+                        "title": "1. Concepto Fundamental",
+                        "content": "Explicación detallada del primer concepto clave."
+                      },
+                      {
+                        "id": "pcCKyi",
+                        "title": "2. Aplicación Práctica",
+                        "content": "Pasos o recomendaciones para aplicar este concepto."
+                      }
+                    ]
+                  }
+                },
+                {
+                  "id": "PZ_-9Nuc",
+                  "kind": "timeline",
+                  "content": {
+                    "steps": [
+                      {
+                        "id": "_-Hrce",
+                        "title": "Paso 1: Diagnóstico Inicial",
+                        "description": "Evalúe el estado financiero y operativo actual."
+                      },
+                      {
+                        "id": "apOgTN",
+                        "title": "Paso 2: Presupuestación",
+                        "description": "Proyecte los ingresos y egresos esperados."
+                      },
+                      {
+                        "id": "9Etu8V",
+                        "title": "Paso 3: Monitoreo",
+                        "description": "Supervise periódicamente las desviaciones presupuestarias."
+                      }
+                    ]
+                  }
+                },
+                {
+                  "id": "q-LyYik-",
+                  "kind": "gallery",
+                  "content": {
+                    "images": [
+                      {
+                        "id": "gP-xLQ",
+                        "url": "https://images.unsplash.com/photo-1556761175-5973dc0f32e7?q=80&w=1200",
+                        "caption": "Figura 1: Análisis de resultados en equipo"
+                      },
+                      {
+                        "id": "DiCML9",
+                        "url": "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?q=80&w=1200",
+                        "caption": "Figura 2: Planificación estratégica de metas"
+                      }
+                    ]
+                  }
+                },
+                {
+                  "id": "kjj9bue-",
+                  "kind": "knowledge_check",
+                  "content": {
+                    "question": "¿Cuál es el objetivo principal del Balance General en una MyPE?",
+                    "options": [
+                      {
+                        "id": "qTd0LW",
+                        "text": "Mostrar los activos, pasivos y patrimonio en un momento determinado.",
+                        "isCorrect": true
+                      },
+                      {
+                        "id": "c6YQLd",
+                        "text": "Registrar únicamente las ventas en efectivo del día.",
+                        "isCorrect": false
+                      },
+                      {
+                        "id": "0aQKDU",
+                        "text": "Calcular el impuesto sobre la renta anual.",
+                        "isCorrect": false
+                      }
+                    ],
+                    "explanation": "El Balance General proporciona una foto fija de la situación financiera de la empresa, mostrando lo que tiene (activos) y lo que debe (pasivos)."
+                  }
+                },
+                {
+                  "id": "QNfDiPYX",
+                  "kind": "resource",
+                  "content": {
+                    "fileTitle": "Plantilla de Flujo de Caja en Excel",
+                    "fileUrl": "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf",
+                    "fileType": "XLSX",
+                    "fileSize": "450 KB",
+                    "description": "Descargue esta plantilla editable para organizar las finanzas de su negocio."
+                  }
+                }
+              ]
             }
           ]
         }
