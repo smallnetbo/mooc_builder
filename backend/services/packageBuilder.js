@@ -1022,6 +1022,7 @@ function generateStandalonePlayerHTML(course) {
         const bgPosY = cfg.bgPositionY !== undefined ? cfg.bgPositionY : 50;
         const bgSize = cfg.bgSize || 'cover';
         const bgRepeat = cfg.bgRepeat || 'no-repeat';
+        const bgOp = (cfg.bgOpacity !== undefined ? cfg.bgOpacity : 85) / 100;
         const bgColor = cfg.bgColor || '#0f172a';
 
         const overlayEnabled = cfg.overlayEnabled !== false;
@@ -1069,7 +1070,7 @@ function generateStandalonePlayerHTML(course) {
         const coverImgStyle = "background-image: url('" + (activeModule.coverImage || 'https://images.unsplash.com/photo-1556761175-5973dc0f32e7?q=80&w=1600&auto=format&fit=crop') + "'); " +
           "background-position: " + bgPosX + "% " + bgPosY + "%; " +
           "background-size: " + bgSize + "; " +
-          "background-repeat: " + bgRepeat + "; opacity: 0.85;";
+          "background-repeat: " + bgRepeat + "; opacity: " + bgOp + ";";
 
         coverDiv.innerHTML = '<div class="cover-hero" style="background-color: ' + bgColor + ';">' +
           '<div class="cover-hero-bg" style="' + coverImgStyle + '"></div>' +
@@ -1114,9 +1115,29 @@ function generateStandalonePlayerHTML(course) {
         // Banner Cita Concepto Clave
         let quoteHtml = '';
         if (curLesson.quoteBanner && curLesson.quoteBanner.text) {
-          const qBg = curLesson.quoteBanner.bgImage || 'https://images.unsplash.com/photo-1556761175-5973dc0f32e7?q=80&w=1200';
-          quoteHtml = '<div class="quote-card">' +
-            '<div class="quote-card-bg" style="background-image: url(' + "'" + qBg + "'" + ')"></div>' +
+          const qb = curLesson.quoteBanner;
+          const qBg = qb.bgImage || 'https://images.unsplash.com/photo-1556761175-5973dc0f32e7?q=80&w=1200';
+          const qPosX = qb.bgPositionX !== undefined ? qb.bgPositionX : 50;
+          const qPosY = qb.bgPositionY !== undefined ? qb.bgPositionY : 50;
+          const qSize = qb.bgSize || 'cover';
+          const qRepeat = qb.bgRepeat || 'no-repeat';
+          const qOp = (qb.bgOpacity !== undefined ? qb.bgOpacity : 30) / 100;
+          const qColor = qb.bgColor || '#0f172a';
+          const qOverlayEnabled = qb.overlayEnabled !== false;
+          const qOverlayOp = (qb.overlayOpacity !== undefined ? qb.overlayOpacity : 70) / 100;
+
+          const qBgStyle = "background-image: url('" + qBg + "'); " +
+            "background-position: " + qPosX + "% " + qPosY + "%; " +
+            "background-size: " + qSize + "; " +
+            "background-repeat: " + qRepeat + "; opacity: " + qOp + ";";
+
+          const qOverlayStyle = qOverlayEnabled
+            ? "background: linear-gradient(to right, rgba(0,0,0," + qOverlayOp + "), rgba(0,0,0," + (qOverlayOp * 0.7) + "));"
+            : "display: none;";
+
+          quoteHtml = '<div class="quote-card" style="background-color: ' + qColor + ';">' +
+            '<div class="quote-card-bg" style="' + qBgStyle + '"></div>' +
+            '<div class="quote-card-overlay" style="' + qOverlayStyle + '"></div>' +
             '<div class="quote-card-content">' +
               '<div class="quote-accent-line"></div>' +
               '<div class="quote-text">' + escapeHtml(curLesson.quoteBanner.text) + '</div>' +
@@ -1870,7 +1891,74 @@ async function processCourseImageAssets(exportCourse) {
         }
       }
     }
-  }
+
+    // Procesar imágenes de banners de cita en lecciones
+    async function processLessonQuotes(node) {
+      if (!node) return;
+      if (node.quoteBanner && node.quoteBanner.bgImage) {
+          const qImgStr = String(node.quoteBanner.bgImage).trim();
+          const lesId = node.id || 'les';
+
+          if (qImgStr.startsWith('data:image/')) {
+            try {
+              const match = qImgStr.match(/^data:image\/([a-zA-Z0-9\+\-\.]+);base64,(.+)$/);
+              if (match) {
+                let ext = match[1].toLowerCase();
+                if (ext === 'jpeg') ext = 'jpg';
+                if (ext === 'svg+xml') ext = 'svg';
+                const base64Data = match[2];
+                const buffer = Buffer.from(base64Data, 'base64');
+                const relPath = `assets/images/quote_${lesId}.${ext}`;
+
+                imageBuffers.push({ relPath, buffer });
+                assetFiles.push(relPath);
+                node.quoteBanner.bgImage = relPath;
+              }
+            } catch (err) {
+              console.error(`Error procesando imagen base64 de cita para lección ${lesId}:`, err);
+            }
+          } else if (qImgStr.startsWith('http://') || qImgStr.startsWith('https://')) {
+            try {
+              const controller = new AbortController();
+              const timeoutId = setTimeout(() => controller.abort(), 6000);
+              const res = await fetch(qImgStr, { signal: controller.signal });
+              clearTimeout(timeoutId);
+
+              if (res.ok) {
+                const arrayBuf = await res.arrayBuffer();
+                const buffer = Buffer.from(arrayBuf);
+
+                let ext = 'jpg';
+                const contentType = res.headers.get('content-type') || '';
+                if (contentType.includes('png')) ext = 'png';
+                else if (contentType.includes('svg')) ext = 'svg';
+                else if (contentType.includes('webp')) ext = 'webp';
+                else if (contentType.includes('gif')) ext = 'gif';
+                else {
+                  const urlExtMatch = qImgStr.match(/\.(png|jpg|jpeg|svg|webp|gif)(\?|$)/i);
+                  if (urlExtMatch) ext = urlExtMatch[1].toLowerCase();
+                }
+
+                const relPath = `assets/images/quote_${lesId}.${ext}`;
+                imageBuffers.push({ relPath, buffer });
+                assetFiles.push(relPath);
+                node.quoteBanner.bgImage = relPath;
+              }
+            } catch (err) {
+              console.warn(`No se pudo descargar la imagen remota de cita ${qImgStr} para lección ${lesId}:`, err.message);
+            }
+          }
+        }
+
+        if (Array.isArray(node.children)) {
+          for (const child of node.children) {
+            await processLessonQuotes(child);
+          }
+        }
+      }
+
+      await processLessonQuotes(mod);
+    }
 
   return { processedCourse: clonedCourse, assetFiles, imageBuffers };
 }

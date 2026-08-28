@@ -62,7 +62,7 @@ export default function ModuleCoverView() {
               backgroundPosition: `${cfg.bgPositionX}% ${cfg.bgPositionY}%`,
               backgroundSize: cfg.bgSize || 'cover',
               backgroundRepeat: cfg.bgRepeat || 'no-repeat',
-              opacity: 0.85,
+              opacity: (cfg.bgOpacity ?? 85) / 100,
             }}
           />
         )}

@@ -22,7 +22,11 @@
               "subtitle": "ELEMENTO 1 DE 5",
               "quoteBanner": {
                 "text": "La gestión empresarial en las Micro y pequeñas empresas (MyPE) permitirá dirigir estratégicamente el rumbo de la empresa hacia el crecimiento, la sostenibilidad y el cumplimiento de los objetivos empresariales.",
-                "bgImage": "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?q=80&w=1600&auto=format&fit=crop"
+                "bgImage": "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?q=80&w=1600&auto=format&fit=crop",
+                "bgOpacity": 92,
+                "bgPositionY": 26,
+                "overlayEnabled": true,
+                "overlayOpacity": 42
               },
               "blocks": [
                 {
@@ -380,6 +384,7 @@
         "bgPositionY": 50,
         "bgSize": "cover",
         "bgRepeat": "no-repeat",
+        "bgOpacity": 100,
         "overlayEnabled": false,
         "overlayTopColor": "#000000",
         "overlayTopOpacity": 50,
@@ -528,7 +533,23 @@
             }
           ]
         }
-      ]
+      ],
+      "coverConfig": {
+        "bgColor": "#0f172a",
+        "bgPositionX": 50,
+        "bgPositionY": 50,
+        "bgSize": "cover",
+        "bgRepeat": "no-repeat",
+        "bgOpacity": 85,
+        "overlayEnabled": true,
+        "overlayTopColor": "#000000",
+        "overlayTopOpacity": 50,
+        "overlayBottomColor": "#0f172a",
+        "overlayBottomOpacity": 70,
+        "patternStyle": "diamonds",
+        "patternOpacity": 20,
+        "curveStyle": "arch"
+      }
     },
     {
       "id": "mod-3",
@@ -853,7 +874,26 @@
       "primaryColor": "#0d9488",
       "coverImage": "https://images.unsplash.com/photo-1556761175-5973dc0f32e7?q=80&w=1600&auto=format&fit=crop",
       "objective": "Describa aquí el objetivo principal del módulo.",
-      "children": []
+      "children": [
+        {
+          "id": "cjAgkTLs",
+          "type": "topic",
+          "title": "Nuevo tema",
+          "children": [
+            {
+              "id": "zsgksQWf",
+              "type": "lesson",
+              "title": "Nueva lección",
+              "subtitle": "ELEMENTO NUEVO",
+              "quoteBanner": {
+                "text": "Añada una cita o idea clave resaltada para esta lección.",
+                "bgImage": "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?q=80&w=1600&auto=format&fit=crop"
+              },
+              "blocks": []
+            }
+          ]
+        }
+      ]
     }
   ]
 }

@@ -22,7 +22,9 @@ import {
   GitCommit,
   AlertCircle,
   Download,
-  HelpCircle
+  HelpCircle,
+  Settings,
+  Upload
 } from 'lucide-react';
 
 function findLesson(course, lessonId) {
@@ -50,6 +52,7 @@ const BLOCK_COMPONENTS = {
 
 export default function Canvas() {
   const { course, selectedLessonId, addBlock, updateLessonQuote } = useCourseStore();
+  const [showQuoteConfigModal, setShowQuoteConfigModal] = React.useState(false);
   const node = selectedLessonId ? findLesson(course, selectedLessonId) : null;
 
   if (!node) {
@@ -91,13 +94,306 @@ export default function Canvas() {
             <input
               type="text"
               className="w-full p-1.5 border border-slate-300 rounded bg-white text-xs focus:outline-none focus:border-[#f58220]"
-              placeholder="URL Imagen de fondo para el banner de cita"
+              placeholder="URL o ruta de imagen para el banner de cita"
               value={node.quoteBanner?.bgImage || ''}
               onChange={(e) => updateLessonQuote(node.id, { bgImage: e.target.value })}
             />
+            <button
+              type="button"
+              onClick={() => setShowQuoteConfigModal(true)}
+              className="p-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded border border-slate-300 transition-colors cursor-pointer shrink-0 flex items-center space-x-1"
+              title="Configurar propiedades de imagen del banner de cita"
+            >
+              <Settings size={14} className="text-slate-600 hover:text-[#f58220]" />
+            </button>
           </div>
         </div>
       </div>
+
+      {/* MODAL DE CONFIGURACIÓN DE IMAGEN PARA BANNER DE CITA */}
+      {showQuoteConfigModal && (() => {
+        const qb = node.quoteBanner || {};
+        const bgPosX = qb.bgPositionX ?? 50;
+        const bgPosY = qb.bgPositionY ?? 50;
+        const bgSize = qb.bgSize || 'cover';
+        const bgRepeat = qb.bgRepeat || 'no-repeat';
+        const bgOpacity = qb.bgOpacity ?? 40;
+        const bgColor = qb.bgColor || '#0f172a';
+        const overlayEnabled = qb.overlayEnabled !== false;
+        const overlayOpacity = qb.overlayOpacity ?? 60;
+
+        return (
+          <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-xl shadow-2xl max-w-lg w-full p-6 space-y-4 max-h-[90vh] overflow-y-auto">
+              <h3 className="text-base font-bold text-slate-800 border-b pb-2 flex items-center justify-between">
+                <span className="flex items-center space-x-2">
+                  <Settings size={16} className="text-[#f58220]" />
+                  <span>Configuración de Imagen de Cita</span>
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setShowQuoteConfigModal(false)}
+                  className="text-slate-400 hover:text-slate-600 font-bold text-sm cursor-pointer"
+                >
+                  ✕
+                </button>
+              </h3>
+
+              {/* VISTA PREVIA MINI CARTA DE CITA */}
+              <div className="space-y-1">
+                <label className="font-semibold text-slate-700 text-xs block">Vista Previa del Banner</label>
+                <div
+                  className="relative rounded-lg overflow-hidden text-white min-h-[120px] flex items-center p-4 shadow-md transition-all"
+                  style={{ backgroundColor: bgColor }}
+                >
+                  {qb.bgImage && (
+                    <div
+                      className="absolute inset-0 transition-all duration-200"
+                      style={{
+                        backgroundImage: `url('${qb.bgImage}')`,
+                        backgroundPosition: `${bgPosX}% ${bgPosY}%`,
+                        backgroundSize: bgSize,
+                        backgroundRepeat: bgRepeat,
+                        opacity: bgOpacity / 100,
+                      }}
+                    />
+                  )}
+                  {overlayEnabled && (
+                    <div
+                      className="absolute inset-0 pointer-events-none transition-all duration-200"
+                      style={{
+                        background: `linear-gradient(to right, rgba(0,0,0,${overlayOpacity / 100}), rgba(0,0,0,${(overlayOpacity * 0.7) / 100}))`
+                      }}
+                    />
+                  )}
+                  <div className="relative z-10 space-y-2">
+                    <div className="w-8 h-1 bg-white rounded-full" />
+                    <p className="text-xs font-bold leading-relaxed text-white drop-shadow-sm line-clamp-3">
+                      {qb.text || 'Vista previa del texto de cita resaltada...'}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* CONTROLES DE CONFIGURACIÓN */}
+              <div className="space-y-3 text-xs bg-slate-50 p-3 rounded-lg border border-slate-200">
+                {/* Choose color & file */}
+                <div>
+                  <label className="font-semibold text-slate-700 block mb-1">Choose color & file (Fondo e Imagen)</label>
+                  <div className="flex items-center space-x-3 pt-1">
+                    <div className="flex items-center space-x-1 bg-white border border-slate-300 rounded px-2 py-1">
+                      <input
+                        type="color"
+                        className="w-5 h-5 p-0 border-0 cursor-pointer shrink-0"
+                        value={bgColor}
+                        onChange={(e) => updateLessonQuote(node.id, { bgColor: e.target.value })}
+                        title="Color de fondo base"
+                      />
+                      <span className="font-mono text-[11px] uppercase text-slate-600">{bgColor}</span>
+                    </div>
+
+                    <label className="flex items-center space-x-1.5 bg-slate-200 hover:bg-slate-300 text-slate-800 font-semibold px-3 py-1 rounded cursor-pointer border border-slate-300 transition-colors">
+                      <Upload size={13} className="text-[#f58220]" />
+                      <span>Cargar desde equipo</span>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (!file) return;
+                          if (file.size > 10 * 1024 * 1024) {
+                            alert('La imagen no debe superar los 10MB.');
+                            return;
+                          }
+                          const reader = new FileReader();
+                          reader.onload = (event) => {
+                            if (event.target?.result) {
+                              updateLessonQuote(node.id, { bgImage: event.target.result });
+                            }
+                          };
+                          reader.readAsDataURL(file);
+                        }}
+                      />
+                    </label>
+
+                    {qb.bgImage && (
+                      <button
+                        type="button"
+                        onClick={() => updateLessonQuote(node.id, { bgImage: '' })}
+                        className="text-rose-600 hover:text-rose-800 font-semibold underline cursor-pointer"
+                      >
+                        Quitar imagen
+                      </button>
+                    )}
+                  </div>
+
+                  <div className="pt-2">
+                    <input
+                      type="text"
+                      placeholder="O pegue una URL de imagen (https://...)"
+                      className="w-full border border-slate-300 rounded px-3 py-1 bg-white focus:outline-none focus:border-[#f58220]"
+                      value={qb.bgImage || ''}
+                      onChange={(e) => updateLessonQuote(node.id, { bgImage: e.target.value })}
+                    />
+                  </div>
+                </div>
+
+                {/* Background Position X e Y */}
+                <div>
+                  <label className="font-semibold text-slate-700 block mb-1">Background Position</label>
+                  <div className="grid grid-cols-2 gap-3 bg-white p-2.5 rounded border border-slate-200">
+                    <div>
+                      <div className="flex justify-between items-center mb-1">
+                        <span className="text-slate-600 font-medium">X: {bgPosX}%</span>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <input
+                          type="range"
+                          min="0"
+                          max="100"
+                          className="w-full accent-[#f58220]"
+                          value={bgPosX}
+                          onChange={(e) => updateLessonQuote(node.id, { bgPositionX: Number(e.target.value) })}
+                        />
+                        <input
+                          type="number"
+                          min="0"
+                          max="100"
+                          className="w-14 border border-slate-300 rounded px-1 py-0.5 text-center font-mono"
+                          value={bgPosX}
+                          onChange={(e) => updateLessonQuote(node.id, { bgPositionX: Math.min(100, Math.max(0, Number(e.target.value))) })}
+                        />
+                      </div>
+                    </div>
+
+                    <div>
+                      <div className="flex justify-between items-center mb-1">
+                        <span className="text-slate-600 font-medium">Y: {bgPosY}%</span>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <input
+                          type="range"
+                          min="0"
+                          max="100"
+                          className="w-full accent-[#f58220]"
+                          value={bgPosY}
+                          onChange={(e) => updateLessonQuote(node.id, { bgPositionY: Number(e.target.value) })}
+                        />
+                        <input
+                          type="number"
+                          min="0"
+                          max="100"
+                          className="w-14 border border-slate-300 rounded px-1 py-0.5 text-center font-mono"
+                          value={bgPosY}
+                          onChange={(e) => updateLessonQuote(node.id, { bgPositionY: Math.min(100, Math.max(0, Number(e.target.value))) })}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Background Size & Background Repeat */}
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="font-semibold text-slate-700 block mb-1">Background Size</label>
+                    <select
+                      className="w-full border border-slate-300 rounded px-2.5 py-1.5 bg-white focus:outline-none focus:border-[#f58220]"
+                      value={bgSize}
+                      onChange={(e) => updateLessonQuote(node.id, { bgSize: e.target.value })}
+                    >
+                      <option value="cover">cover (Cubrir completa)</option>
+                      <option value="contain">contain (Contener)</option>
+                      <option value="auto">auto (Original)</option>
+                      <option value="100% 100%">100% 100% (Estirar)</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="font-semibold text-slate-700 block mb-1">Background Repeat</label>
+                    <select
+                      className="w-full border border-slate-300 rounded px-2.5 py-1.5 bg-white focus:outline-none focus:border-[#f58220]"
+                      value={bgRepeat}
+                      onChange={(e) => updateLessonQuote(node.id, { bgRepeat: e.target.value })}
+                    >
+                      <option value="no-repeat">no-repeat (Sin repetición)</option>
+                      <option value="repeat">repeat (Repetir ambos ejes)</option>
+                      <option value="repeat-x">repeat-x (Repetir horizontal)</option>
+                      <option value="repeat-y">repeat-y (Repetir vertical)</option>
+                    </select>
+                  </div>
+                </div>
+
+                {/* Background Opacity */}
+                <div className="bg-white p-2.5 rounded border border-slate-200">
+                  <div className="flex justify-between items-center mb-1">
+                    <span className="font-semibold text-slate-700">Opacidad de Imagen (Background Opacity)</span>
+                    <span className="text-slate-600 font-medium font-mono">{bgOpacity}%</span>
+                  </div>
+                  <div className="flex items-center space-x-3">
+                    <input
+                      type="range"
+                      min="0"
+                      max="100"
+                      className="w-full accent-[#f58220]"
+                      value={bgOpacity}
+                      onChange={(e) => updateLessonQuote(node.id, { bgOpacity: Number(e.target.value) })}
+                    />
+                    <input
+                      type="number"
+                      min="0"
+                      max="100"
+                      className="w-14 border border-slate-300 rounded px-1 py-0.5 text-center font-mono"
+                      value={bgOpacity}
+                      onChange={(e) => updateLessonQuote(node.id, { bgOpacity: Math.min(100, Math.max(0, Number(e.target.value))) })}
+                    />
+                  </div>
+                </div>
+
+                {/* Overlay de Oscurecimiento */}
+                <div className="bg-white p-2.5 rounded border border-slate-200 space-y-2">
+                  <label className="flex items-center space-x-2 font-semibold text-slate-800 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      className="accent-[#f58220] w-4 h-4"
+                      checked={overlayEnabled}
+                      onChange={(e) => updateLessonQuote(node.id, { overlayEnabled: e.target.checked })}
+                    />
+                    <span>Activar Capa de Oscurecimiento (Overlay Contrast)</span>
+                  </label>
+
+                  {overlayEnabled && (
+                    <div className="pt-1 space-y-1 border-t border-slate-100">
+                      <div className="flex justify-between text-slate-600 font-medium">
+                        <span>Opacidad de Oscurecimiento</span>
+                        <span className="font-mono">{overlayOpacity}%</span>
+                      </div>
+                      <input
+                        type="range"
+                        min="0"
+                        max="100"
+                        className="w-full accent-[#f58220]"
+                        value={overlayOpacity}
+                        onChange={(e) => updateLessonQuote(node.id, { overlayOpacity: Number(e.target.value) })}
+                      />
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <div className="flex justify-end pt-2">
+                <button
+                  type="button"
+                  onClick={() => setShowQuoteConfigModal(false)}
+                  className="bg-[#f58220] text-white font-bold text-xs px-5 py-2 rounded uppercase shadow-sm cursor-pointer hover:bg-[#e07010] transition-colors"
+                >
+                  Guardar y cerrar
+                </button>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
 
       {/* Bloques de Contenido */}
       <div className="space-y-4">

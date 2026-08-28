@@ -7,6 +7,7 @@ export const DEFAULT_COVER_CONFIG = {
   bgPositionY: 50, // %
   bgSize: 'cover', // 'cover' | 'contain' | 'auto' | '100% 100%'
   bgRepeat: 'no-repeat', // 'no-repeat' | 'repeat' | 'repeat-x' | 'repeat-y'
+  bgOpacity: 85, // % (0-100)
 
   // Panel 2: Capa de Superposición (Overlay)
   overlayEnabled: true,

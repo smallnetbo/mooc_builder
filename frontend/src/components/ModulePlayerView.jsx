@@ -545,23 +545,52 @@ export default function ModulePlayerView() {
                 </div>
 
                 {/* CARTA HERO DE CITA / CONCEPTO CLAVE (Captura 2) */}
-                {currentLesson?.quoteBanner && (
-                  <div className="relative w-full rounded-lg overflow-hidden bg-slate-900 text-white min-h-[180px] sm:min-h-[220px] flex items-center p-6 sm:p-10 shadow-lg">
-                    <div
-                      className="absolute inset-0 bg-cover bg-center opacity-30 transform scale-105"
-                      style={{ backgroundImage: `url(${currentLesson.quoteBanner.bgImage})` }}
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/60 to-black/70" />
+                {currentLesson?.quoteBanner && (() => {
+                  const qb = currentLesson.quoteBanner;
+                  const bgPosX = qb.bgPositionX ?? 50;
+                  const bgPosY = qb.bgPositionY ?? 50;
+                  const bgSize = qb.bgSize || 'cover';
+                  const bgRepeat = qb.bgRepeat || 'no-repeat';
+                  const bgOpacity = qb.bgOpacity ?? 30;
+                  const bgColor = qb.bgColor || '#0f172a';
+                  const overlayEnabled = qb.overlayEnabled !== false;
+                  const overlayOpacity = qb.overlayOpacity ?? 70;
 
-                    <div className="relative z-10 max-w-xl space-y-3">
-                      {/* Línea horizontal blanca de acento */}
-                      <div className="w-12 h-1 bg-white rounded-full mb-3" />
-                      <p className="text-sm sm:text-base md:text-lg font-bold leading-relaxed tracking-wide text-white drop-shadow-sm">
-                        {currentLesson.quoteBanner.text}
-                      </p>
+                  return (
+                    <div
+                      className="relative w-full rounded-lg overflow-hidden text-white min-h-[180px] sm:min-h-[220px] flex items-center p-6 sm:p-10 shadow-lg transition-all"
+                      style={{ backgroundColor: bgColor }}
+                    >
+                      {qb.bgImage && (
+                        <div
+                          className="absolute inset-0 transition-all duration-200"
+                          style={{
+                            backgroundImage: `url('${qb.bgImage}')`,
+                            backgroundPosition: `${bgPosX}% ${bgPosY}%`,
+                            backgroundSize: bgSize,
+                            backgroundRepeat: bgRepeat,
+                            opacity: bgOpacity / 100,
+                          }}
+                        />
+                      )}
+                      {overlayEnabled && (
+                        <div
+                          className="absolute inset-0 pointer-events-none transition-all duration-200"
+                          style={{
+                            background: `linear-gradient(to right, rgba(0,0,0,${overlayOpacity / 100}), rgba(0,0,0,${(overlayOpacity * 0.7) / 100}))`
+                          }}
+                        />
+                      )}
+
+                      <div className="relative z-10 max-w-xl space-y-3">
+                        <div className="w-12 h-1 bg-white rounded-full mb-3" />
+                        <p className="text-sm sm:text-base md:text-lg font-bold leading-relaxed tracking-wide text-white drop-shadow-sm">
+                          {qb.text}
+                        </p>
+                      </div>
                     </div>
-                  </div>
-                )}
+                  );
+                })()}
 
                 {/* CONTENIDO DE LOS BLOQUES DE LA LECCIÓN */}
                 {currentLesson?.type === 'assessment' ? (

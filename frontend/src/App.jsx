@@ -584,7 +584,7 @@ export default function App() {
                         backgroundPosition: `${cfg.bgPositionX}% ${cfg.bgPositionY}%`,
                         backgroundSize: cfg.bgSize || 'cover',
                         backgroundRepeat: cfg.bgRepeat || 'no-repeat',
-                        opacity: 0.85,
+                        opacity: (cfg.bgOpacity ?? 85) / 100,
                       }}
                     />
                   )}
@@ -812,6 +812,32 @@ export default function App() {
                           <option value="repeat-x">repeat-x (Repetir horizontal)</option>
                           <option value="repeat-y">repeat-y (Repetir vertical)</option>
                         </select>
+                      </div>
+                    </div>
+
+                    {/* Background Opacity */}
+                    <div className="bg-white p-2.5 rounded border border-slate-200">
+                      <div className="flex justify-between items-center mb-1">
+                        <span className="font-semibold text-slate-700">Opacidad de Imagen de Fondo (Background Opacity)</span>
+                        <span className="text-slate-600 font-medium font-mono">{cfg.bgOpacity ?? 85}%</span>
+                      </div>
+                      <div className="flex items-center space-x-3">
+                        <input
+                          type="range"
+                          min="0"
+                          max="100"
+                          className="w-full accent-[#f58220]"
+                          value={cfg.bgOpacity ?? 85}
+                          onChange={(e) => updateCoverConfig({ bgOpacity: Number(e.target.value) })}
+                        />
+                        <input
+                          type="number"
+                          min="0"
+                          max="100"
+                          className="w-14 border border-slate-300 rounded px-1 py-0.5 text-center font-mono"
+                          value={cfg.bgOpacity ?? 85}
+                          onChange={(e) => updateCoverConfig({ bgOpacity: Math.min(100, Math.max(0, Number(e.target.value))) })}
+                        />
                       </div>
                     </div>
                   </div>
