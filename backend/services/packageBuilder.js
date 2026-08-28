@@ -362,6 +362,21 @@ function generateStandalonePlayerHTML(course) {
     }
 
     /* PLAYER CONTENT AREA */
+    .player-wrapper {
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+      padding: 32px 0 60px 0;
+      box-sizing: border-box;
+    }
+    .player-content-inner {
+      width: 100%;
+      max-width: 780px;
+      margin: 0 auto;
+      padding: 0 24px;
+      box-sizing: border-box;
+    }
     .player-container {
       width: 100%;
       max-width: 780px;
@@ -393,12 +408,25 @@ function generateStandalonePlayerHTML(course) {
     /* Quote Banner */
     .quote-card {
       position: relative;
-      border-radius: 12px;
       overflow: hidden;
       background: var(--dark-slate);
       color: white;
-      padding: 32px;
       box-shadow: 0 10px 20px rgba(0,0,0,0.12);
+      display: flex;
+      align-items: center;
+      box-sizing: border-box;
+    }
+    .quote-card.quote-card-centered {
+      border-radius: 12px;
+      width: 100%;
+      padding: 32px 36px;
+      margin-bottom: 8px;
+    }
+    .quote-card.quote-card-full {
+      border-radius: 0;
+      width: 100%;
+      padding: 36px 24px;
+      margin: 8px 0;
     }
     .quote-card-bg {
       position: absolute;
@@ -407,10 +435,18 @@ function generateStandalonePlayerHTML(course) {
       background-position: center;
       opacity: 0.3;
     }
+    .quote-card-overlay {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      z-index: 5;
+    }
     .quote-card-content {
       position: relative;
       z-index: 10;
-      max-width: 600px;
+      max-width: 780px;
+      margin: 0 auto;
+      width: 100%;
     }
     .quote-accent-line {
       width: 48px;
@@ -1104,12 +1140,14 @@ function generateStandalonePlayerHTML(course) {
         }
 
         const playerDiv = document.createElement('div');
-        playerDiv.className = 'player-container';
+        playerDiv.className = 'player-wrapper';
 
         // Header de lección
-        const headerHtml = '<div class="player-header">' +
-          '<h1 class="player-title">' + escapeHtml(curLesson.title || '') + '</h1>' +
-          '<div class="player-subtitle">ELEMENTO ' + (curLessonIdx + 1) + ' DE ' + ALL_LESSONS.length + '</div>' +
+        const headerHtml = '<div class="player-content-inner">' +
+          '<div class="player-header">' +
+            '<h1 class="player-title">' + escapeHtml(curLesson.title || '') + '</h1>' +
+            '<div class="player-subtitle">ELEMENTO ' + (curLessonIdx + 1) + ' DE ' + ALL_LESSONS.length + '</div>' +
+          '</div>' +
         '</div>';
 
         // Banner Cita Concepto Clave
@@ -1125,6 +1163,8 @@ function generateStandalonePlayerHTML(course) {
           const qColor = qb.bgColor || '#0f172a';
           const qOverlayEnabled = qb.overlayEnabled !== false;
           const qOverlayOp = (qb.overlayOpacity !== undefined ? qb.overlayOpacity : 70) / 100;
+          const qLayoutStyle = qb.layoutStyle || 'centered';
+          const qHeight = qb.bannerHeight !== undefined ? qb.bannerHeight : 220;
 
           const qBgStyle = "background-image: url('" + qBg + "'); " +
             "background-position: " + qPosX + "% " + qPosY + "%; " +
@@ -1135,7 +1175,10 @@ function generateStandalonePlayerHTML(course) {
             ? "background: linear-gradient(to right, rgba(0,0,0," + qOverlayOp + "), rgba(0,0,0," + (qOverlayOp * 0.7) + "));"
             : "display: none;";
 
-          quoteHtml = '<div class="quote-card" style="background-color: ' + qColor + ';">' +
+          const isFull = qLayoutStyle === 'full';
+          const cardClass = isFull ? 'quote-card quote-card-full' : 'quote-card quote-card-centered';
+
+          const cardInnerHtml = '<div class="' + cardClass + '" style="background-color: ' + qColor + '; min-height: ' + qHeight + 'px;">' +
             '<div class="quote-card-bg" style="' + qBgStyle + '"></div>' +
             '<div class="quote-card-overlay" style="' + qOverlayStyle + '"></div>' +
             '<div class="quote-card-content">' +
@@ -1143,6 +1186,12 @@ function generateStandalonePlayerHTML(course) {
               '<div class="quote-text">' + escapeHtml(curLesson.quoteBanner.text) + '</div>' +
             '</div>' +
           '</div>';
+
+          if (isFull) {
+            quoteHtml = cardInnerHtml;
+          } else {
+            quoteHtml = '<div class="player-content-inner">' + cardInnerHtml + '</div>';
+          }
         }
 
         // Bloques de contenido o Quiz
@@ -1267,8 +1316,12 @@ function generateStandalonePlayerHTML(course) {
           });
         }
 
-        playerDiv.innerHTML = headerHtml + quoteHtml + contentHtml + 
-          (curLesson.type === 'assessment' ? '' : '<button class="btn-player-continue" onclick="nextLesson()">CONTINUAR</button>');
+        const blocksHtml = '<div class="player-content-inner" style="display:flex; flex-direction:column; gap:28px;">' +
+          contentHtml +
+          (curLesson.type === 'assessment' ? '' : '<button class="btn-player-continue" onclick="nextLesson()">CONTINUAR</button>') +
+        '</div>';
+
+        playerDiv.innerHTML = headerHtml + quoteHtml + blocksHtml;
 
         container.appendChild(playerDiv);
       }

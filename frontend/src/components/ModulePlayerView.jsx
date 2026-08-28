@@ -532,67 +532,85 @@ export default function ModulePlayerView() {
           {playerScreen === 'cover' ? (
             <ModuleCoverView />
           ) : (
-            <div className="p-4 sm:p-8 flex flex-col items-center">
-              <div className="max-w-3xl w-full space-y-6">
-                {/* Título de la Lección y Subtítulo: "ELEMENTO 1 DE 5" */}
-                <div className="text-center space-y-1 pt-2">
-                  <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
-                    {currentLesson?.title}
-                  </h1>
-                  <p className="text-[11px] font-bold text-slate-400 tracking-widest uppercase">
-                    ELEMENTO {currentLessonIndex + 1} DE {lessons.length}
-                  </p>
-                </div>
+            <div className="w-full flex flex-col items-center py-4 sm:py-8 space-y-6">
+              {/* Título de la Lección y Subtítulo: "ELEMENTO 1 DE 5" */}
+              <div className="max-w-3xl w-full px-4 sm:px-8 text-center space-y-1 pt-2">
+                <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
+                  {currentLesson?.title}
+                </h1>
+                <p className="text-[11px] font-bold text-slate-400 tracking-widest uppercase">
+                  ELEMENTO {currentLessonIndex + 1} DE {lessons.length}
+                </p>
+              </div>
 
-                {/* CARTA HERO DE CITA / CONCEPTO CLAVE (Captura 2) */}
-                {currentLesson?.quoteBanner && (() => {
-                  const qb = currentLesson.quoteBanner;
-                  const bgPosX = qb.bgPositionX ?? 50;
-                  const bgPosY = qb.bgPositionY ?? 50;
-                  const bgSize = qb.bgSize || 'cover';
-                  const bgRepeat = qb.bgRepeat || 'no-repeat';
-                  const bgOpacity = qb.bgOpacity ?? 30;
-                  const bgColor = qb.bgColor || '#0f172a';
-                  const overlayEnabled = qb.overlayEnabled !== false;
-                  const overlayOpacity = qb.overlayOpacity ?? 70;
+              {/* CARTA HERO DE CITA / CONCEPTO CLAVE (Captura 2) */}
+              {currentLesson?.quoteBanner && (() => {
+                const qb = currentLesson.quoteBanner;
+                const bgPosX = qb.bgPositionX ?? 50;
+                const bgPosY = qb.bgPositionY ?? 50;
+                const bgSize = qb.bgSize || 'cover';
+                const bgRepeat = qb.bgRepeat || 'no-repeat';
+                const bgOpacity = qb.bgOpacity ?? 30;
+                const bgColor = qb.bgColor || '#0f172a';
+                const overlayEnabled = qb.overlayEnabled !== false;
+                const overlayOpacity = qb.overlayOpacity ?? 70;
+                const layoutStyle = qb.layoutStyle || 'centered';
+                const bannerHeight = qb.bannerHeight ?? 220;
 
-                  return (
-                    <div
-                      className="relative w-full rounded-lg overflow-hidden text-white min-h-[180px] sm:min-h-[220px] flex items-center p-6 sm:p-10 shadow-lg transition-all"
-                      style={{ backgroundColor: bgColor }}
-                    >
-                      {qb.bgImage && (
-                        <div
-                          className="absolute inset-0 transition-all duration-200"
-                          style={{
-                            backgroundImage: `url('${qb.bgImage}')`,
-                            backgroundPosition: `${bgPosX}% ${bgPosY}%`,
-                            backgroundSize: bgSize,
-                            backgroundRepeat: bgRepeat,
-                            opacity: bgOpacity / 100,
-                          }}
-                        />
-                      )}
-                      {overlayEnabled && (
-                        <div
-                          className="absolute inset-0 pointer-events-none transition-all duration-200"
-                          style={{
-                            background: `linear-gradient(to right, rgba(0,0,0,${overlayOpacity / 100}), rgba(0,0,0,${(overlayOpacity * 0.7) / 100}))`
-                          }}
-                        />
-                      )}
+                const isFullWidth = layoutStyle === 'full';
 
-                      <div className="relative z-10 max-w-xl space-y-3">
-                        <div className="w-12 h-1 bg-white rounded-full mb-3" />
-                        <p className="text-sm sm:text-base md:text-lg font-bold leading-relaxed tracking-wide text-white drop-shadow-sm">
-                          {qb.text}
-                        </p>
-                      </div>
+                const bannerContent = (
+                  <div
+                    className={`relative overflow-hidden text-white flex items-center shadow-lg transition-all ${
+                      isFullWidth
+                        ? 'w-full rounded-none px-6 sm:px-12 py-8'
+                        : 'w-full rounded-lg px-6 sm:px-10 py-8'
+                    }`}
+                    style={{ backgroundColor: bgColor, minHeight: `${bannerHeight}px` }}
+                  >
+                    {qb.bgImage && (
+                      <div
+                        className="absolute inset-0 transition-all duration-200"
+                        style={{
+                          backgroundImage: `url('${qb.bgImage}')`,
+                          backgroundPosition: `${bgPosX}% ${bgPosY}%`,
+                          backgroundSize: bgSize,
+                          backgroundRepeat: bgRepeat,
+                          opacity: bgOpacity / 100,
+                        }}
+                      />
+                    )}
+                    {overlayEnabled && (
+                      <div
+                        className="absolute inset-0 pointer-events-none transition-all duration-200"
+                        style={{
+                          background: `linear-gradient(to right, rgba(0,0,0,${overlayOpacity / 100}), rgba(0,0,0,${(overlayOpacity * 0.7) / 100}))`
+                        }}
+                      />
+                    )}
+
+                    <div className="relative z-10 max-w-3xl mx-auto w-full space-y-3">
+                      <div className="w-12 h-1 bg-white rounded-full mb-3" />
+                      <p className="text-sm sm:text-base md:text-lg font-bold leading-relaxed tracking-wide text-white drop-shadow-sm">
+                        {qb.text}
+                      </p>
                     </div>
-                  );
-                })()}
+                  </div>
+                );
 
-                {/* CONTENIDO DE LOS BLOQUES DE LA LECCIÓN */}
+                if (isFullWidth) {
+                  return <div className="w-full my-2">{bannerContent}</div>;
+                }
+
+                return (
+                  <div className="max-w-3xl w-full px-4 sm:px-8 my-2">
+                    {bannerContent}
+                  </div>
+                );
+              })()}
+
+              {/* CONTENIDO DE LOS BLOQUES DE LA LECCIÓN */}
+              <div className="max-w-3xl w-full px-4 sm:px-8 space-y-6">
                 {currentLesson?.type === 'assessment' ? (
                   <QuizRunner assessment={currentLesson} onComplete={nextLesson} themeColor={themeColor} />
                 ) : (

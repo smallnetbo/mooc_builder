@@ -143,8 +143,10 @@ export default function Canvas() {
               <div className="space-y-1">
                 <label className="font-semibold text-slate-700 text-xs block">Vista Previa del Banner</label>
                 <div
-                  className="relative rounded-lg overflow-hidden text-white min-h-[120px] flex items-center p-4 shadow-md transition-all"
-                  style={{ backgroundColor: bgColor }}
+                  className={`relative overflow-hidden text-white flex items-center p-4 shadow-md transition-all ${
+                    qb.layoutStyle === 'full' ? 'rounded-none border-x-4 border-[#f58220]' : 'rounded-lg'
+                  }`}
+                  style={{ backgroundColor: bgColor, minHeight: `${Math.max(100, Math.round((qb.bannerHeight ?? 220) * 0.6))}px` }}
                 >
                   {qb.bgImage && (
                     <div
@@ -346,6 +348,65 @@ export default function Canvas() {
                       className="w-14 border border-slate-300 rounded px-1 py-0.5 text-center font-mono"
                       value={bgOpacity}
                       onChange={(e) => updateLessonQuote(node.id, { bgOpacity: Math.min(100, Math.max(0, Number(e.target.value))) })}
+                    />
+                  </div>
+                </div>
+
+                {/* Ancho del Banner (Layout Style) */}
+                <div className="bg-white p-2.5 rounded border border-slate-200 space-y-1.5">
+                  <label className="font-semibold text-slate-700 block">Formato de Ancho del Banner</label>
+                  <div className="grid grid-cols-2 gap-2">
+                    <button
+                      type="button"
+                      onClick={() => updateLessonQuote(node.id, { layoutStyle: 'centered' })}
+                      className={`p-2 rounded border text-left transition-all cursor-pointer ${
+                        (qb.layoutStyle || 'centered') === 'centered'
+                          ? 'border-[#f58220] bg-orange-50/60 font-bold text-[#f58220]'
+                          : 'border-slate-300 bg-white text-slate-700 hover:bg-slate-50'
+                      }`}
+                    >
+                      <div className="text-[11px]">🔳 Centrado</div>
+                      <div className="text-[10px] text-slate-500 font-normal">Ancho estándar de lección</div>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => updateLessonQuote(node.id, { layoutStyle: 'full' })}
+                      className={`p-2 rounded border text-left transition-all cursor-pointer ${
+                        qb.layoutStyle === 'full'
+                          ? 'border-[#f58220] bg-orange-50/60 font-bold text-[#f58220]'
+                          : 'border-slate-300 bg-white text-slate-700 hover:bg-slate-50'
+                      }`}
+                    >
+                      <div className="text-[11px]">↔️ Ancho Completo</div>
+                      <div className="text-[10px] text-slate-500 font-normal">Extendido de borde a borde</div>
+                    </button>
+                  </div>
+                </div>
+
+                {/* Altura del Banner */}
+                <div className="bg-white p-2.5 rounded border border-slate-200">
+                  <div className="flex justify-between items-center mb-1">
+                    <span className="font-semibold text-slate-700">Altura del Banner</span>
+                    <span className="text-slate-600 font-medium font-mono">{qb.bannerHeight ?? 220}px</span>
+                  </div>
+                  <div className="flex items-center space-x-3">
+                    <input
+                      type="range"
+                      min="140"
+                      max="450"
+                      step="10"
+                      className="w-full accent-[#f58220]"
+                      value={qb.bannerHeight ?? 220}
+                      onChange={(e) => updateLessonQuote(node.id, { bannerHeight: Number(e.target.value) })}
+                    />
+                    <input
+                      type="number"
+                      min="140"
+                      max="450"
+                      className="w-16 border border-slate-300 rounded px-1 py-0.5 text-center font-mono"
+                      value={qb.bannerHeight ?? 220}
+                      onChange={(e) => updateLessonQuote(node.id, { bannerHeight: Math.min(450, Math.max(140, Number(e.target.value))) })}
                     />
                   </div>
                 </div>

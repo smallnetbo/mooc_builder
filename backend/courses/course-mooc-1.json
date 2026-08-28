@@ -26,7 +26,9 @@
                 "bgOpacity": 92,
                 "bgPositionY": 26,
                 "overlayEnabled": true,
-                "overlayOpacity": 42
+                "overlayOpacity": 42,
+                "layoutStyle": "full",
+                "bannerHeight": 450
               },
               "blocks": [
                 {
@@ -886,8 +888,12 @@
               "title": "Nueva lección",
               "subtitle": "ELEMENTO NUEVO",
               "quoteBanner": {
-                "text": "Añada una cita o idea clave resaltada para esta lección.",
-                "bgImage": "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?q=80&w=1600&auto=format&fit=crop"
+                "text": "esta cita es de ancho completo",
+                "bgImage": "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?q=80&w=1600&auto=format&fit=crop",
+                "layoutStyle": "full",
+                "bannerHeight": 450,
+                "bgOpacity": 91,
+                "bgPositionY": 9
               },
               "blocks": []
             }
