@@ -72,7 +72,291 @@
               "title": "Evaluación",
               "subtitle": "ELEMENTO 4 DE 5",
               "passScore": 70,
-              "questions": []
+              "questions": [
+                {
+                  "id": "q_uBdKpb",
+                  "text": "¿La Ley Marco de Autonomías y Descentralización “Andrés Ibáñez”, tiene por objeto y alcance regular el régimen de autonomías del gobierno central?",
+                  "type": "true_false",
+                  "points": 1,
+                  "feedback": "",
+                  "options": [
+                    {
+                      "id": "o_7dHz",
+                      "text": "Verdadero",
+                      "weight_percentage": 0,
+                      "is_correct": false
+                    },
+                    {
+                      "id": "o_JxHU",
+                      "text": "Falso",
+                      "weight_percentage": 100,
+                      "is_correct": true
+                    }
+                  ]
+                },
+                {
+                  "id": "q_0Z0YQJ",
+                  "text": "¿La Ley Marco tiene por finalidad distribuir las funciones político administrativas del Estado?",
+                  "type": "true_false",
+                  "points": 1,
+                  "feedback": "",
+                  "options": [
+                    {
+                      "id": "o_gNll",
+                      "text": "Verdadero",
+                      "weight_percentage": 100,
+                      "is_correct": true
+                    },
+                    {
+                      "id": "o_g0Yp",
+                      "text": "Falso",
+                      "weight_percentage": 0,
+                      "is_correct": false
+                    }
+                  ]
+                },
+                {
+                  "id": "q_ZD5rLK",
+                  "text": "¿La Ley Marco dispone mecanismos e instrumentos de coordinación entre el Nivel Central del Estado y las Entidades Territoriales Autónomas para garantizar el funcionamiento del Estado Plurinacional con autonomías?",
+                  "type": "true_false",
+                  "points": 1,
+                  "feedback": "",
+                  "options": [
+                    {
+                      "id": "o__2GH",
+                      "text": "Verdadero",
+                      "weight_percentage": 100,
+                      "is_correct": true
+                    },
+                    {
+                      "id": "o_gUQw",
+                      "text": "Falso",
+                      "weight_percentage": 0,
+                      "is_correct": false
+                    }
+                  ]
+                },
+                {
+                  "id": "q_l1Rilu",
+                  "text": "El modelo de Estado boliviano se caracteriza por ser:",
+                  "type": "single_choice",
+                  "points": 1,
+                  "feedback": "",
+                  "options": [
+                    {
+                      "id": "o__OEX",
+                      "text": "Simple",
+                      "weight_percentage": 0,
+                      "is_correct": false,
+                      "feedback": ""
+                    },
+                    {
+                      "id": "o_9SUW",
+                      "text": "Compuesto",
+                      "weight_percentage": 100,
+                      "is_correct": true,
+                      "feedback": ""
+                    },
+                    {
+                      "id": "o_-Io-",
+                      "text": "Ninguno de los dos anteriores",
+                      "weight_percentage": 0,
+                      "is_correct": false,
+                      "feedback": ""
+                    }
+                  ]
+                },
+                {
+                  "id": "q__WiNFQ",
+                  "text": "¿El Estado Unitario es aquel Estado que posee un único poder político central y que por tanto dicho poder es el encargado de tomar todas las decisiones que hacen a lo público?",
+                  "type": "true_false",
+                  "points": 1,
+                  "feedback": "",
+                  "options": [
+                    {
+                      "id": "o_nmCW",
+                      "text": "Verdadero",
+                      "weight_percentage": 100,
+                      "is_correct": true
+                    },
+                    {
+                      "id": "o_L5Mr",
+                      "text": "Falso",
+                      "weight_percentage": 0,
+                      "is_correct": false
+                    }
+                  ]
+                },
+                {
+                  "id": "q_1yZoT3",
+                  "text": "La “Autonomía” es la cualidad gubernativa que adquiere una entidad territorial de acuerdo a las condiciones y procedimientos establecidos en la Constitución Política del Estado, cuyas características son:",
+                  "type": "multiple_choice",
+                  "points": 1,
+                  "feedback": "",
+                  "options": [
+                    {
+                      "id": "o_HVYj",
+                      "text": "La igualdad jerárquica o de rango constitucional entre entidades territoriales autónomas",
+                      "weight_percentage": 25,
+                      "is_correct": true,
+                      "feedback": ""
+                    },
+                    {
+                      "id": "o_0TQp",
+                      "text": "La elección directa de sus autoridades por las ciudadanas y los ciudadanos",
+                      "weight_percentage": 25,
+                      "is_correct": true,
+                      "feedback": ""
+                    },
+                    {
+                      "id": "o_OMOL",
+                      "text": "La administración de sus recursos económicos",
+                      "weight_percentage": 25,
+                      "is_correct": true,
+                      "feedback": ""
+                    },
+                    {
+                      "id": "o_wCRT",
+                      "text": "El ejercicio de las facultades legislativa, reglamentaria, fiscalizadora, deliberativa y ejecutiva, por sus órganos de gobierno autónomo, en el ámbito de su jurisdicción",
+                      "weight_percentage": 25,
+                      "is_correct": true,
+                      "feedback": ""
+                    },
+                    {
+                      "id": "o_bor2",
+                      "text": "Todas las anteriores",
+                      "weight_percentage": 100,
+                      "is_correct": true,
+                      "feedback": ""
+                    }
+                  ]
+                },
+                {
+                  "id": "q_gGFcP-",
+                  "text": "En lo que respecta a la organización territorial define a la Unidad Territorial como un espacio geográfico delimitado para la organización del territorio del Estado, pudiendo ser:",
+                  "type": "multiple_choice",
+                  "points": 1,
+                  "feedback": "",
+                  "options": [
+                    {
+                      "id": "o_EkFI",
+                      "text": "Departamento",
+                      "weight_percentage": 25,
+                      "is_correct": true,
+                      "feedback": ""
+                    },
+                    {
+                      "id": "o_A2xe",
+                      "text": "Provincia",
+                      "weight_percentage": 25,
+                      "is_correct": true,
+                      "feedback": ""
+                    },
+                    {
+                      "id": "o_tnNx",
+                      "text": "Municipio",
+                      "weight_percentage": 25,
+                      "is_correct": true,
+                      "feedback": ""
+                    },
+                    {
+                      "id": "o_fqsv",
+                      "text": "Territorio indígena originario campesino",
+                      "weight_percentage": 25,
+                      "is_correct": true,
+                      "feedback": ""
+                    },
+                    {
+                      "id": "o_9b3-",
+                      "text": "Todas las anteriores",
+                      "weight_percentage": 100,
+                      "is_correct": true,
+                      "feedback": ""
+                    },
+                    {
+                      "id": "o_HsnT",
+                      "text": "La Unidad Territorial, comprende todo el territorio nacional sin distinción alguna",
+                      "weight_percentage": 0,
+                      "is_correct": false,
+                      "feedback": ""
+                    }
+                  ]
+                },
+                {
+                  "id": "q_LsQ4oB",
+                  "text": "La “autonomía” no es una cualidad que se adjudica a la unidad territorial, sino a la entidad territorial",
+                  "type": "true_false",
+                  "points": 1,
+                  "feedback": "",
+                  "options": [
+                    {
+                      "id": "o_sDtW",
+                      "text": "Verdadero",
+                      "weight_percentage": 100,
+                      "is_correct": true
+                    },
+                    {
+                      "id": "o_WPhJ",
+                      "text": "Falso",
+                      "weight_percentage": 0,
+                      "is_correct": false
+                    }
+                  ]
+                },
+                {
+                  "id": "q_EOOqqf",
+                  "text": "La lealtad institucional como principio es: “El nivel central del Estado y las entidades territoriales autónomas tomarán en cuenta el impacto que sus acciones puedan tener sobre el nivel central del Estado y otras entidades territoriales, evitando aquellas que las perjudiquen”",
+                  "type": "true_false",
+                  "points": 1,
+                  "feedback": "",
+                  "options": [
+                    {
+                      "id": "o_6CEB",
+                      "text": "Verdadero",
+                      "weight_percentage": 100,
+                      "is_correct": true
+                    },
+                    {
+                      "id": "o_OvUz",
+                      "text": "Falso",
+                      "weight_percentage": 0,
+                      "is_correct": false
+                    }
+                  ]
+                },
+                {
+                  "id": "q_wOVBJW",
+                  "text": "Las entidades territoriales autónomas ejercen efectivamente sus competencias de forma progresiva y de acuerdo a sus propias capacidades",
+                  "type": "true_false",
+                  "points": 1,
+                  "feedback": "",
+                  "options": [
+                    {
+                      "id": "o_Yo2I",
+                      "text": "Verdadero",
+                      "weight_percentage": 100,
+                      "is_correct": true
+                    },
+                    {
+                      "id": "o_tzK6",
+                      "text": "Falso",
+                      "weight_percentage": 0,
+                      "is_correct": false
+                    }
+                  ]
+                }
+              ],
+              "settings": {
+                "max_attempts": 3,
+                "time_limit_seconds": 900,
+                "auto_submit_on_timeout": true,
+                "passing_grade": 7,
+                "max_grade": 10,
+                "grading_method": "HIGHEST_SCORE",
+                "shuffle_questions": false,
+                "shuffle_options": true,
+                "allow_review": true
+              }
             },
             {
               "id": "m1-l5",

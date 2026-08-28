@@ -1198,61 +1198,498 @@ function generateStandalonePlayerHTML(course) {
       }
     }
 
-    function renderQuizFormHTML(assessment) {
-      const questions = assessment.questions || [];
-      let qHtml = questions.map((q, i) => {
-        const optsHtml = (q.options || []).map(o => 
-          '<label class="quiz-opt"><input type="radio" name="q_' + i + '" value="' + o.id + '"> <span>' + o.text + '</span></label>'
-        ).join('');
+    window.activeAssessment = null;
 
-        return '<div class="quiz-question"><div class="quiz-q-title">' + (i + 1) + '. ' + q.text + '</div>' + optsHtml + '</div>';
-      }).join('');
+    const QUIZ_RUNTIME = {};
 
-      return '<div class="quiz-card"><form id="quiz-form">' + qHtml + '</form>' +
-        '<div id="quiz-result-box" style="display:none; padding:16px; border-radius:8px; border:1px solid; margin-top:16px; text-align:center;"></div>' +
-        '<button type="button" class="btn-player-continue" id="btn-quiz-submit" style="margin-top:16px;" onclick="submitQuiz(\\'' + assessment.id + '\\', ' + (assessment.passScore || 70) + ', ' + questions.length + ')">ENVIAR RESPUESTAS</button></div>';
+    function getQuizRuntime(assessment) {
+      const qId = (assessment && assessment.id) || 'quiz';
+      if (!QUIZ_RUNTIME[qId]) {
+        const settings = assessment ? (assessment.settings || {}) : {};
+        const passScore = assessment ? (assessment.passScore || 70) : 70;
+        const maxGrade = settings.max_grade || 10.0;
+        const passingGrade = settings.passing_grade || (maxGrade === 10.0 ? Math.round(passScore / 10) : passScore);
+
+        let attemptsHistory = [];
+        try {
+          const scormSuspend = ScormWrapper.getValue('cmi.suspend_data');
+          if (scormSuspend && scormSuspend.startsWith('{')) {
+            const parsed = JSON.parse(scormSuspend);
+            if (parsed && parsed.quizAttempts && parsed.quizAttempts[qId]) {
+              attemptsHistory = parsed.quizAttempts[qId];
+            }
+          }
+        } catch (e) {}
+
+        if (!attemptsHistory.length) {
+          try {
+            const localStr = localStorage.getItem('mooc_quiz_history_' + qId);
+            if (localStr) attemptsHistory = JSON.parse(localStr) || [];
+          } catch (e) {}
+        }
+
+        QUIZ_RUNTIME[qId] = {
+          stage: 'cover',
+          currentQIndex: 0,
+          userAnswers: {},
+          flaggedQuestions: {},
+          timeRemaining: settings.time_limit_seconds || 0,
+          timerInterval: null,
+          attemptsHistory: attemptsHistory,
+          showStartModal: false,
+          showMaxAttemptsModal: false,
+          showResultModal: false,
+          lastResult: null,
+          passingGrade: passingGrade,
+          maxGrade: maxGrade,
+          passScore: passScore
+        };
+      }
+      return QUIZ_RUNTIME[qId];
     }
 
-    function submitQuiz(assessmentId, passScore, questionCount) {
-      const form = document.getElementById('quiz-form');
-      if (!form) return;
+    function renderQuizFormHTML(assessment) {
+      window.activeAssessment = assessment;
+      const rt = getQuizRuntime(assessment);
+      const questions = assessment.questions || [];
+      const settings = assessment.settings || {};
+      const maxAttempts = settings.max_attempts || 3;
+      const timeLimitSecs = settings.time_limit_seconds || 0;
+      const maxGrade = rt.maxGrade;
+      const passingGrade = rt.passingGrade;
 
-      let correct = 0;
-      for (let i = 0; i < questionCount; i++) {
-        const selected = form.querySelector('input[name="q_' + i + '"]:checked');
-        const q = (ALL_LESSONS.find(l => l.id === assessmentId)?.questions || [])[i];
-        if (selected && q && selected.value === q.correctOptionId) {
-          correct++;
+      // 1. STAGE === 'cover' (Moodle Cover Page)
+      if (rt.stage === 'cover') {
+        const canStart = maxAttempts === 0 || rt.attemptsHistory.length < maxAttempts;
+        
+        let historyRows = (rt.attemptsHistory || []).map((att, idx) => 
+          '<tr style="border-bottom:1px solid #f1f5f9;">' +
+            '<td style="padding:10px; font-weight:700;">Intento ' + (att.attemptNumber || (idx + 1)) + '</td>' +
+            '<td style="padding:10px; color:#64748b;">Finalizado<br><span style="font-size:10px; color:#94a3b8;">' + (att.date || '') + '</span></td>' +
+            '<td style="padding:10px; text-align:center; font-weight:800;">' + att.grade + ' / ' + maxGrade + '</td>' +
+            '<td style="padding:10px; text-align:right;"><button type="button" style="color:#2563eb; font-weight:700; background:none; border:none; cursor:pointer;" onclick="onQuizAction(&quot;view_review&quot;, ' + idx + ')">Revisión</button></td>' +
+          '</tr>'
+        ).join('');
+
+        let finalGradeHtml = '';
+        if (rt.attemptsHistory.length > 0) {
+          const grades = rt.attemptsHistory.map(a => Number(a.grade) || 0);
+          const highest = Math.max(...grades);
+          const isPassed = highest >= passingGrade;
+          finalGradeHtml = '<div style="padding:14px; background:#f8fafc; border:1px solid #e2e8f0; border-radius:10px; display:flex; align-items:center; justify-content:space-between; margin-top:16px;">' +
+            '<div><span style="font-size:12px; color:#64748b; font-weight:600; display:block;">Calificación registrada:</span><span style="font-size:16px; font-weight:900; color:#0f172a;">Calificación más alta: ' + highest.toFixed(2) + ' / ' + maxGrade + '</span></div>' +
+            '<span style="padding:6px 12px; border-radius:6px; font-size:12px; font-weight:800; color:#fff; background:' + (isPassed ? '#16a34a' : '#e11d48') + ';">' + (isPassed ? '✓ APROBADO' : '✕ NO APROBADO') + '</span>' +
+          '</div>';
         }
+
+        let startModalHtml = '';
+        if (rt.showStartModal) {
+          startModalHtml = '<div style="position:fixed; inset:0; z-index:999; background:rgba(15,23,42,0.6); display:flex; align-items:center; justify-content:center; padding:16px;">' +
+            '<div style="background:#fff; border-radius:16px; max-width:440px; width:100%; padding:24px; box-shadow:0 20px 25px rgba(0,0,0,0.25);">' +
+              '<h3 style="font-size:16px; font-weight:800; color:#0f172a; margin-bottom:12px;">Comenzar Intento ' + (rt.attemptsHistory.length + 1) + (maxAttempts > 0 ? ' de ' + maxAttempts : '') + '</h3>' +
+              '<p style="font-size:12.5px; color:#475569; line-height:1.5; margin-bottom:12px;">Está por comenzar su <strong>Intento ' + (rt.attemptsHistory.length + 1) + '</strong>.</p>' +
+              (timeLimitSecs > 0 ? '<div style="padding:10px; background:#fffbeb; border:1px solid #fde68a; border-radius:8px; font-size:12px; color:#92400e; font-weight:600; margin-bottom:16px;">⚠️ Su intento tendrá un límite de tiempo de ' + Math.round(timeLimitSecs / 60) + ' minutos. El cronómetro no se detendrá.</div>' : '') +
+              '<div style="display:flex; justify-content:flex-end; gap:10px;">' +
+                '<button type="button" style="padding:8px 16px; border-radius:8px; border:1px solid #cbd5e1; background:#fff; font-size:12px; font-weight:700; cursor:pointer;" onclick="onQuizAction(&quot;close_modal&quot;)">Cancelar</button>' +
+                '<button type="button" style="padding:8px 20px; border-radius:8px; border:none; background:var(--primary-orange); color:#fff; font-size:12px; font-weight:800; cursor:pointer;" onclick="onQuizAction(&quot;start_attempt_confirmed&quot;)">Comenzar Intento</button>' +
+              '</div>' +
+            '</div>' +
+          '</div>';
+        }
+
+        let maxModalHtml = '';
+        if (rt.showMaxAttemptsModal) {
+          maxModalHtml = '<div style="position:fixed; inset:0; z-index:999; background:rgba(15,23,42,0.6); display:flex; align-items:center; justify-content:center; padding:16px;">' +
+            '<div style="background:#fff; border-radius:16px; max-width:440px; width:100%; padding:24px; text-align:center; box-shadow:0 20px 25px rgba(0,0,0,0.25);">' +
+              '<h3 style="font-size:17px; font-weight:900; color:#e11d48; margin-bottom:12px;">Límite de Intentos Alcanzado</h3>' +
+              '<p style="font-size:12.5px; color:#475569; line-height:1.5; margin-bottom:16px;">Ha ocupado todos los intentos permitidos (<strong>' + rt.attemptsHistory.length + ' de ' + maxAttempts + '</strong>) para este cuestionario.</p>' +
+              '<button type="button" style="width:100%; padding:10px; border-radius:8px; border:none; background:#0f172a; color:#fff; font-size:12px; font-weight:800; cursor:pointer;" onclick="onQuizAction(&quot;close_modal&quot;)">Entendido</button>' +
+            '</div>' +
+          '</div>';
+        }
+
+        return '<div class="quiz-card" style="background:#fff; border:1px solid #e2e8f0; border-radius:16px; padding:24px; box-shadow:0 4px 12px rgba(0,0,0,0.03); space-y:20px;">' +
+          '<div style="background:linear-gradient(135deg, var(--primary-orange) 0%, #0f172a 100%); padding:24px; border-radius:12px; color:#fff; margin-bottom:20px;">' +
+            '<span style="background:rgba(255,255,255,0.2); font-size:10px; font-weight:800; padding:3px 8px; border-radius:999px; text-transform:uppercase;">CUESTIONARIO</span>' +
+            '<h2 style="font-size:20px; font-weight:900; margin-top:6px;">' + escapeHtml(assessment.title || '') + '</h2>' +
+          '</div>' +
+          '<div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(140px, 1fr)); gap:12px; background:#f8fafc; border:1px solid #e2e8f0; border-radius:12px; padding:16px; font-size:12px; margin-bottom:20px;">' +
+            '<div><span style="color:#94a3b8; font-size:10px; font-weight:800; text-transform:uppercase; display:block;">Intentos Permitidos</span><span style="font-weight:900; color:#0f172a; font-size:13px;">' + (maxAttempts > 0 ? maxAttempts : 'Sin Límite') + '</span></div>' +
+            '<div><span style="color:#94a3b8; font-size:10px; font-weight:800; text-transform:uppercase; display:block;">Tiempo Límite</span><span style="font-weight:900; color:#0f172a; font-size:13px;">' + (timeLimitSecs > 0 ? Math.round(timeLimitSecs / 60) + ' min' : 'Sin Límite') + '</span></div>' +
+            '<div><span style="color:#94a3b8; font-size:10px; font-weight:800; text-transform:uppercase; display:block;">Calificación Aprobatoria</span><span style="font-weight:900; color:#166534; font-size:13px;">' + passingGrade + ' de ' + maxGrade + '</span></div>' +
+            '<div><span style="color:#94a3b8; font-size:10px; font-weight:800; text-transform:uppercase; display:block;">Método Calificación</span><span style="font-weight:900; color:#0f172a; font-size:13px;">Calificación más alta</span></div>' +
+          '</div>' +
+          (rt.attemptsHistory.length > 0 ? '<div style="margin-bottom:20px;"><h4 style="font-size:11px; font-weight:800; color:#64748b; text-transform:uppercase; margin-bottom:8px;">Resumen de sus intentos previos</h4><table style="width:100%; font-size:12px; border-collapse:collapse;"><thead style="background:#f1f5f9; font-weight:800; color:#475569;"><tr><th style="padding:10px; text-align:left;">Intento</th><th style="padding:10px; text-align:left;">Estado</th><th style="padding:10px; text-align:center;">Calificación / ' + maxGrade + '</th><th style="padding:10px; text-align:right;">Revisión</th></tr></thead><tbody>' + historyRows + '</tbody></table></div>' : '') +
+          finalGradeHtml +
+          '<div style="margin-top:20px; display:flex; gap:12px; flex-wrap:wrap;">' +
+            (canStart
+              ? '<button type="button" class="btn-player-continue" style="flex:1; min-width:200px; font-weight:900; font-size:13px; padding:14px; background:' + (rt.attemptsHistory.length > 0 ? '#475569' : 'var(--primary-orange)') + ';" onclick="onQuizAction(&quot;request_start&quot;)">' + (rt.attemptsHistory.length === 0 ? 'Comenzar el cuestionario' : 'Reintentar el cuestionario') + '</button>'
+              : '<button type="button" style="flex:1; min-width:200px; padding:14px; background:#e2e8f0; color:#64748b; font-weight:800; border-radius:8px; border:none; cursor:pointer;" onclick="onQuizAction(&quot;show_max_modal&quot;)">Límite de Intentos Alcanzado (' + maxAttempts + ' de ' + maxAttempts + ')</button>'
+            ) +
+            (rt.attemptsHistory.length > 0 || !canStart
+              ? '<button type="button" class="btn-player-continue" style="flex:1; min-width:200px; font-weight:900; font-size:13px; padding:14px; background:var(--primary-orange);" onclick="nextLesson()">Continuar a la siguiente lección ›</button>'
+              : ''
+            ) +
+          '</div>' +
+          startModalHtml + maxModalHtml +
+        '</div>';
       }
 
-      const scorePercent = questionCount > 0 ? Math.round((correct / questionCount) * 100) : 100;
-      const passed = scorePercent >= passScore;
+      // 2. STAGE === 'attempt' (Execution with Left Metadata Column, Clean Options, Floating Timer & Nav Grid)
+      if (rt.stage === 'attempt') {
+        const curQIdx = rt.currentQIndex || 0;
+        const curQ = questions[curQIdx] || questions[0];
+        const isMultiChoice = (curQ.options || []).filter(o => (o.weight_percentage || 0) > 0 || o.is_correct).length > 1;
+        const inputType = isMultiChoice ? 'checkbox' : 'radio';
+        const selectedOpts = rt.userAnswers[curQ.id] || [];
 
-      ScormWrapper.setScoreAndStatus(scorePercent, passed ? 'passed' : 'failed');
-      
-      const resultBox = document.getElementById('quiz-result-box');
-      const submitBtn = document.getElementById('btn-quiz-submit');
-      if (submitBtn) submitBtn.style.display = 'none';
+        const optsHtml = (curQ.options || []).map(o => {
+          const isSelected = selectedOpts.includes(o.id);
+          return '<label class="quiz-opt" style="display:flex; align-items:center; padding:14px; border:1px solid ' + (isSelected ? 'var(--primary-orange)' : '#e2e8f0') + '; background:' + (isSelected ? '#fff7ed' : '#fff') + '; border-radius:10px; margin-bottom:8px; cursor:pointer;">' +
+            '<input type="' + inputType + '" name="q_' + curQ.id + '" value="' + o.id + '" ' + (isSelected ? 'checked' : '') + ' onchange="onQuizOptionSelect(&quot;' + o.id + '&quot;, ' + isMultiChoice + ')" style="margin-right:12px; accent-color:var(--primary-orange); width:16px; height:16px;">' +
+            '<span style="font-size:13.5px; color:#1e293b; font-weight:500;">' + escapeHtml(o.text || '') + '</span>' +
+          '</label>';
+        }).join('');
 
-      if (resultBox) {
-        resultBox.style.display = 'block';
-        if (passed) {
-          markCompleted(assessmentId);
-          resultBox.style.background = '#f0fdf4';
-          resultBox.style.borderColor = '#bbf7d0';
-          resultBox.style.color = '#166534';
-          resultBox.innerHTML = '<div style="font-size:16px; font-weight:800; margin-bottom:6px;">¡Excelente! Puntaje: ' + scorePercent + '% (Aprobado)</div>' +
-            '<div style="font-size:13px; margin-bottom:14px;">Has superado el puntaje mínimo requerido (' + passScore + '%).</div>' +
-            '<button type="button" class="btn-player-continue" onclick="nextLesson()">CONTINUAR A LA SIGUIENTE LECCIÓN</button>';
-        } else {
-          resultBox.style.background = '#fef2f2';
-          resultBox.style.borderColor = '#fecaca';
-          resultBox.style.color = '#991b1b';
-          resultBox.innerHTML = '<div style="font-size:16px; font-weight:800; margin-bottom:6px;">Puntaje: ' + scorePercent + '% (No alcanzado)</div>' +
-            '<div style="font-size:13px; margin-bottom:14px;">Requieres al menos un ' + passScore + '% para aprobar. Revisa las lecciones e inténtalo nuevamente.</div>' +
-            '<button type="button" class="btn-player-continue" onclick="renderMainView()" style="background:#64748b;">REINTENTAR CUESTIONARIO</button>';
+        let navGridButtons = questions.map((q, idx) => {
+          const isAns = (rt.userAnswers[q.id] || []).length > 0;
+          const isCur = idx === curQIdx;
+          const isFlag = Boolean(rt.flaggedQuestions[q.id]);
+          return '<button type="button" onclick="onQuizNavIdx(' + idx + ')" style="position:relative; height:38px; border-radius:6px; border:1px solid ' + (isCur ? 'var(--primary-orange)' : '#cbd5e1') + '; font-size:12px; font-weight:800; background:' + (isAns ? '#0f172a' : '#fff') + '; color:' + (isAns ? '#fff' : '#334155') + '; cursor:pointer;">' +
+            (idx + 1) + (isFlag ? '<span style="position:absolute; top:-2px; right:-2px; width:8px; height:8px; background:#f59e0b; border-radius:50%;"></span>' : '') +
+          '</button>';
+        }).join('');
+
+        const isFlagged = Boolean(rt.flaggedQuestions[curQ.id]);
+
+        return '<div class="quiz-card" style="background:#fff; border:1px solid #e2e8f0; border-radius:16px; padding:20px; box-shadow:0 4px 12px rgba(0,0,0,0.03);">' +
+          '<div style="display:flex; align-items:center; justify-content:space-between; border-bottom:1px solid #e2e8f0; padding-bottom:12px; margin-bottom:20px;">' +
+            '<div><h3 style="font-size:15px; font-weight:800; color:#0f172a;">' + escapeHtml(assessment.title || '') + '</h3><span style="font-size:11px; color:#94a3b8; font-weight:700;">Pregunta ' + (curQIdx + 1) + ' de ' + questions.length + '</span></div>' +
+            (timeLimitSecs > 0 ? '<div class="quiz-timer-badge" style="padding:6px 12px; border-radius:8px; background:' + (rt.timeRemaining <= 120 ? '#e11d48' : 'var(--primary-orange)') + '; color:#fff; font-size:12px; font-weight:800;">⏱ Tiempo restante: ' + formatTimerSecs(rt.timeRemaining) + '</div>' : '') +
+          '</div>' +
+          '<div style="display:grid; grid-template-columns:1fr 240px; gap:20px;">' +
+            '<div>' +
+              '<div style="display:grid; grid-template-columns:140px 1fr; gap:16px; border:1px solid #e2e8f0; border-radius:12px; overflow:hidden; margin-bottom:16px;">' +
+                '<div style="background:#f8fafc; border-right:1px solid #e2e8f0; padding:14px; font-size:11.5px; display:flex; flex-direction:column; justify-content:space-between;">' +
+                  '<div><strong style="font-size:13px; color:#0f172a; display:block;">Pregunta ' + (curQIdx + 1) + '</strong><span style="color:#64748b; display:block; margin-top:2px;">' + (selectedOpts.length > 0 ? 'Respuesta guardada' : 'Sin responder aún') + '</span><span style="color:#64748b; display:block;">Se puntúa como ' + (curQ.points || 1) + ',00</span></div>' +
+                  '<button type="button" style="margin-top:12px; padding:4px 8px; border-radius:4px; border:1px solid #cbd5e1; background:' + (isFlagged ? '#fef3c7' : '#fff') + '; color:' + (isFlagged ? '#92400e' : '#475569') + '; font-size:11px; font-weight:700; cursor:pointer;" onclick="onQuizToggleFlag(&quot;' + curQ.id + '&quot philosophy)">' + (isFlagged ? '⛳ Marcada' : 'Marcar pregunta') + '</button>' +
+                '</div>' +
+                '<div style="padding:16px; background:#fff;">' +
+                  '<div style="font-weight:700; font-size:14.5px; color:#0f172a; margin-bottom:12px; line-height:1.5;">' + escapeHtml(curQ.text || '') + '</div>' +
+                  '<div style="font-size:11px; font-weight:700; color:#94a3b8; text-transform:uppercase; margin-bottom:8px;">' + (isMultiChoice ? 'Seleccione una o más opciones:' : 'Seleccione una:') + '</div>' +
+                  optsHtml +
+                '</div>' +
+              '</div>' +
+              '<div style="display:flex; align-items:center; justify-content:space-between;">' +
+                '<button type="button" style="padding:8px 16px; border-radius:8px; border:1px solid #cbd5e1; background:#fff; font-size:12px; font-weight:700; cursor:pointer;" ' + (curQIdx === 0 ? 'disabled style="opacity:0.4;"' : '') + ' onclick="onQuizNavIdx(' + (curQIdx - 1) + ')">‹ Anterior</button>' +
+                (curQIdx < questions.length - 1
+                  ? '<button type="button" style="padding:8px 20px; border-radius:8px; border:none; background:var(--primary-orange); color:#fff; font-size:12px; font-weight:800; cursor:pointer;" onclick="onQuizNavIdx(' + (curQIdx + 1) + ')">Siguiente ›</button>'
+                  : '<button type="button" style="padding:8px 20px; border-radius:8px; border:none; background:#166534; color:#fff; font-size:12px; font-weight:800; cursor:pointer;" onclick="onQuizAction(&quot;go_summary&quot;)">Terminar intento...</button>'
+                ) +
+              '</div>' +
+            '</div>' +
+            '<div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:12px; padding:14px;">' +
+              '<h4 style="font-size:11px; font-weight:800; color:#475569; text-transform:uppercase; margin-bottom:10px; border-bottom:1px solid #e2e8f0; padding-bottom:6px;">Navegación por el cuestionario</h4>' +
+              '<div style="display:grid; grid-template-columns:repeat(4, 1fr); gap:6px; margin-bottom:12px;">' + navGridButtons + '</div>' +
+              '<button type="button" style="width:100%; padding:8px; border-radius:6px; border:none; background:#166534; color:#fff; font-size:11px; font-weight:800; cursor:pointer;" onclick="onQuizAction(&quot;go_summary&quot;)">Terminar intento...</button>' +
+            '</div>' +
+          '</div>' +
+        '</div>';
+      }
+
+      // 3. STAGE === 'summary' (Pre-submission Review)
+      if (rt.stage === 'summary') {
+        const rowsHtml = questions.map((q, idx) => {
+          const isAns = (rt.userAnswers[q.id] || []).length > 0;
+          return '<tr style="border-bottom:1px solid #f1f5f9;">' +
+            '<td style="padding:10px; font-weight:700;">Pregunta ' + (idx + 1) + '</td>' +
+            '<td style="padding:10px; font-weight:600; color:' + (isAns ? '#166534' : '#e11d48') + ';">' + (isAns ? 'Respuesta guardada' : 'Sin responder aún') + '</td>' +
+          '</tr>';
+        }).join('');
+
+        let resultModalHtml = '';
+        if (rt.showResultModal && rt.lastResult) {
+          const res = rt.lastResult;
+          resultModalHtml = '<div style="position:fixed; inset:0; z-index:999; background:rgba(15,23,42,0.6); display:flex; align-items:center; justify-content:center; padding:16px;">' +
+            '<div style="background:#fff; border-radius:16px; max-width:420px; width:100%; padding:24px; text-align:center; box-shadow:0 20px 25px rgba(0,0,0,0.25);">' +
+              '<h3 style="font-size:18px; font-weight:900; color:#0f172a; margin-bottom:12px;">' + (res.isPassed ? '¡Felicidades! Evaluación Aprobada' : 'Intento Finalizado') + '</h3>' +
+              '<div style="padding:14px; background:#f8fafc; border-radius:10px; margin-bottom:14px;"><span style="font-size:11px; color:#94a3b8; font-weight:700; text-transform:uppercase; display:block;">Calificación Obtenida</span><span style="font-size:26px; font-weight:900; color:#0f172a;">' + res.grade + ' / ' + maxGrade + '</span><span style="font-size:12px; color:#64748b; font-weight:700; display:block;">(' + res.percentage + '%)</span></div>' +
+              '<p style="font-size:12px; color:#475569; margin-bottom:16px;">' + (res.isPassed ? 'Has superado la calificación mínima de ' + passingGrade + ' requerida.' : 'No alcanzaste la nota mínima de ' + passingGrade + ' para aprobar.') + '</p>' +
+              '<div style="display:flex; gap:10px;">' +
+                '<button type="button" style="flex:1; padding:10px; border-radius:8px; border:none; background:#0f172a; color:#fff; font-size:11.5px; font-weight:800; cursor:pointer;" onclick="onQuizAction(&quot;view_review&quot;, ' + (rt.attemptsHistory.length - 1) + ')">Ver Revisión (✔/✕)</button>' +
+                '<button type="button" style="flex:1; padding:10px; border-radius:8px; border:none; background:var(--primary-orange); color:#fff; font-size:11.5px; font-weight:800; cursor:pointer;" onclick="onQuizAction(&quot;go_cover&quot;)">Continuar</button>' +
+              '</div>' +
+            '</div>' +
+          '</div>';
         }
+
+        return '<div class="quiz-card" style="background:#fff; border:1px solid #e2e8f0; border-radius:16px; padding:24px; box-shadow:0 4px 12px rgba(0,0,0,0.03);">' +
+          '<h3 style="font-size:18px; font-weight:800; color:#0f172a; margin-bottom:6px;">Resumen del intento</h3>' +
+          '<p style="font-size:12px; color:#64748b; margin-bottom:16px;">Verifique sus respuestas antes del envío definitivo.</p>' +
+          '<table style="width:100%; font-size:12px; border-collapse:collapse; margin-bottom:20px;"><thead style="background:#f1f5f9; font-weight:800; color:#475569;"><tr><th style="padding:10px; text-align:left;">Pregunta</th><th style="padding:10px; text-align:left;">Estado</th></tr></thead><tbody>' + rowsHtml + '</tbody></table>' +
+          '<div style="display:flex; align-items:center; justify-content:space-between;">' +
+            '<button type="button" style="padding:10px 18px; border-radius:8px; border:1px solid #cbd5e1; background:#fff; font-size:12px; font-weight:700; cursor:pointer;" onclick="onQuizAction(&quot;go_attempt&quot;)">Volver al intento</button>' +
+            '<button type="button" style="padding:10px 22px; border-radius:8px; border:none; background:#166534; color:#fff; font-size:12px; font-weight:800; cursor:pointer;" onclick="submitQuizAttemptFinal()">Enviar todo y terminar</button>' +
+          '</div>' +
+          resultModalHtml +
+        '</div>';
+      }
+
+      // 4. STAGE === 'review' (Detailed Feedback Review with Moodle Marks)
+      if (rt.stage === 'review') {
+        const att = rt.attemptsHistory[rt.reviewingAttemptIndex !== null ? rt.reviewingAttemptIndex : rt.attemptsHistory.length - 1] || {};
+        const qResults = att.questionResults || {};
+
+        const revQuestionsHtml = questions.map((q, idx) => {
+          const sel = att.userAnswers?.[q.id] || [];
+          const res = qResults[q.id] || { rawScore: 0, maxPoints: 1, percentage: 0 };
+          const isFull = res.percentage >= 100;
+          const isPart = res.percentage > 0 && res.percentage < 100;
+
+          const optsHtml = (q.options || []).map(o => {
+            const isSel = sel.includes(o.id);
+            const isCorr = (o.weight_percentage || 0) > 0 || o.is_correct;
+            let mark = '';
+            if (isSel && isCorr) mark = '<strong style="color:#166534; margin-left:8px;">✓ Correcta</strong>';
+            else if (isSel && !isCorr) mark = '<strong style="color:#e11d48; margin-left:8px;">✕ Incorrecta</strong>';
+
+            return '<div style="padding:10px 14px; border:1px solid ' + (isSel ? (isCorr ? '#22c55e' : '#ef4444') : '#e2e8f0') + '; background:' + (isSel ? (isCorr ? '#f0fdf4' : '#fef2f2') : '#fff') + '; border-radius:8px; margin-bottom:6px; font-size:13px; font-weight:500;">' +
+              '<input type="radio" ' + (isSel ? 'checked' : '') + ' disabled style="margin-right:8px;"> ' + escapeHtml(o.text || '') + mark +
+            '</div>';
+          }).join('');
+
+          return '<div style="display:grid; grid-template-columns:140px 1fr; gap:16px; border:1px solid #e2e8f0; border-radius:12px; overflow:hidden; margin-bottom:16px;">' +
+            '<div style="background:#f8fafc; border-right:1px solid #e2e8f0; padding:14px; font-size:11.5px;">' +
+              '<strong style="font-size:13px; color:#0f172a; display:block;">Pregunta ' + (idx + 1) + '</strong>' +
+              '<span style="font-weight:700; color:' + (isFull ? '#166534' : isPart ? '#d97706' : '#e11d48') + '; display:block; margin-top:2px;">' + (isFull ? 'Correcta' : isPart ? 'Parcialmente correcta' : 'Incorrecta') + '</span>' +
+              '<span style="color:#64748b; display:block;">Se puntúa ' + res.rawScore + ' sobre ' + res.maxPoints + '</span>' +
+            '</div>' +
+            '<div style="padding:16px; background:#fff;">' +
+              '<div style="font-weight:700; font-size:14.5px; color:#0f172a; margin-bottom:12px;">' + escapeHtml(q.text || '') + '</div>' +
+              optsHtml +
+            '</div>' +
+          '</div>';
+        }).join('');
+
+        return '<div class="quiz-card" style="background:#fff; border:1px solid #e2e8f0; border-radius:16px; padding:24px; box-shadow:0 4px 12px rgba(0,0,0,0.03);">' +
+          '<div style="display:flex; align-items:center; justify-content:space-between; border-bottom:1px solid #e2e8f0; padding-bottom:12px; margin-bottom:16px;">' +
+            '<div><h3 style="font-size:17px; font-weight:800; color:#0f172a;">Revisión del Intento ' + (att.attemptNumber || 1) + '</h3><span style="font-size:11px; color:#64748b;">Finalizado en: ' + (att.date || '') + '</span></div>' +
+            '<div style="display:flex; gap:8px;">' +
+              '<button type="button" style="padding:8px 16px; border-radius:8px; border:1px solid #cbd5e1; background:#fff; font-size:12px; font-weight:700; cursor:pointer;" onclick="onQuizAction(&quot;go_cover&quot;)">Volver a carátula</button>' +
+              '<button type="button" style="padding:8px 16px; border-radius:8px; border:none; background:var(--primary-orange); color:#fff; font-size:12px; font-weight:800; cursor:pointer;" onclick="nextLesson()">Continuar ›</button>' +
+            '</div>' +
+          '</div>' +
+          '<div style="padding:14px; background:#f8fafc; border:1px solid #e2e8f0; border-radius:10px; display:flex; align-items:center; justify-content:space-between; margin-bottom:20px; font-size:12.5px;">' +
+            '<div><strong>Calificación:</strong> ' + att.grade + ' de ' + maxGrade + ' (' + (att.attemptScore?.percentage || 0) + '%)</div>' +
+            '<strong style="color:' + (att.isPassed ? '#166534' : '#e11d48') + ';">' + (att.isPassed ? 'Aprobado' : 'No Aprobado') + '</strong>' +
+          '</div>' +
+          revQuestionsHtml +
+        '</div>';
+      }
+
+      return '<div>Evaluación</div>';
+    }
+
+    function formatTimerSecs(s) {
+      const m = Math.floor(s / 60);
+      const sec = s % 60;
+      return (m < 10 ? '0' : '') + m + ':' + (sec < 10 ? '0' : '') + sec;
+    }
+
+    function onQuizAction(action, extra) {
+      const assessment = window.activeAssessment;
+      if (!assessment) return;
+      const rt = getQuizRuntime(assessment);
+      const settings = assessment.settings || {};
+      const max = settings.max_attempts || 3;
+
+      if (action === 'request_start') {
+        if (max > 0 && rt.attemptsHistory.length >= max) {
+          rt.showMaxAttemptsModal = true;
+        } else if ((settings.time_limit_seconds || 0) > 0 || max > 0) {
+          rt.showStartModal = true;
+        } else {
+          rt.stage = 'attempt';
+          rt.userAnswers = {};
+          rt.flaggedQuestions = {};
+          rt.currentQIndex = 0;
+          rt.timeRemaining = settings.time_limit_seconds || 0;
+          startQuizTimer();
+        }
+      } else if (action === 'start_attempt_confirmed') {
+        rt.showStartModal = false;
+        rt.stage = 'attempt';
+        rt.userAnswers = {};
+        rt.flaggedQuestions = {};
+        rt.currentQIndex = 0;
+        rt.timeRemaining = settings.time_limit_seconds || 0;
+        startQuizTimer();
+      } else if (action === 'show_max_modal') {
+        rt.showMaxAttemptsModal = true;
+      } else if (action === 'close_modal') {
+        rt.showStartModal = false;
+        rt.showMaxAttemptsModal = false;
+        rt.showResultModal = false;
+      } else if (action === 'go_summary') {
+        rt.stage = 'summary';
+      } else if (action === 'go_attempt') {
+        rt.stage = 'attempt';
+      } else if (action === 'go_cover') {
+        rt.stage = 'cover';
+        rt.showResultModal = false;
+      } else if (action === 'view_review') {
+        rt.reviewingAttemptIndex = typeof extra === 'number' ? extra : rt.attemptsHistory.length - 1;
+        rt.stage = 'review';
+      }
+
+      renderMainView();
+    }
+
+    function startQuizTimer() {
+      const assessment = window.activeAssessment;
+      if (!assessment) return;
+      const rt = getQuizRuntime(assessment);
+      if (rt.timerInterval) clearInterval(rt.timerInterval);
+
+      if ((assessment.settings?.time_limit_seconds || 0) > 0) {
+        rt.timerInterval = setInterval(() => {
+          if (rt.stage !== 'attempt') {
+            clearInterval(rt.timerInterval);
+            return;
+          }
+          rt.timeRemaining--;
+          if (rt.timeRemaining <= 0) {
+            clearInterval(rt.timerInterval);
+            submitQuizAttemptFinal(true);
+          } else {
+            const timerEl = document.querySelector('.quiz-timer-badge');
+            if (timerEl) timerEl.textContent = '⏱ Tiempo restante: ' + formatTimerSecs(rt.timeRemaining);
+          }
+        }, 1000);
+      }
+    }
+
+    function onQuizOptionSelect(optionId, isMultiChoice) {
+      const assessment = window.activeAssessment;
+      if (!assessment) return;
+      const rt = getQuizRuntime(assessment);
+      const curQIdx = rt.currentQIndex || 0;
+      const questions = assessment.questions || [];
+      const curQ = questions[curQIdx];
+      if (!curQ) return;
+
+      const current = rt.userAnswers[curQ.id] || [];
+      if (isMultiChoice) {
+        if (current.includes(optionId)) {
+          rt.userAnswers[curQ.id] = current.filter(id => id !== optionId);
+        } else {
+          rt.userAnswers[curQ.id] = [...current, optionId];
+        }
+      } else {
+        rt.userAnswers[curQ.id] = [optionId];
+      }
+    }
+
+    function onQuizToggleFlag(questionId) {
+      const assessment = window.activeAssessment;
+      if (!assessment) return;
+      const rt = getQuizRuntime(assessment);
+      rt.flaggedQuestions[questionId] = !rt.flaggedQuestions[questionId];
+      renderMainView();
+    }
+
+    function onQuizNavIdx(idx) {
+      const assessment = window.activeAssessment;
+      if (!assessment) return;
+      const rt = getQuizRuntime(assessment);
+      rt.currentQIndex = idx;
+      rt.stage = 'attempt';
+      renderMainView();
+    }
+
+    function submitQuizAttemptFinal(isAutoSubmit = false) {
+      const assessment = window.activeAssessment;
+      if (!assessment) return;
+      const qId = assessment.id;
+      const rt = getQuizRuntime(assessment);
+      const questions = assessment.questions || [];
+
+      let totalEarnedPoints = 0;
+      let totalMaxPoints = 0;
+      const questionResults = {};
+
+      questions.forEach((q) => {
+        const qPoints = Number(q.points) || 1;
+        totalMaxPoints += qPoints;
+
+        const selected = rt.userAnswers[q.id] || [];
+        let netWeight = 0;
+
+        selected.forEach(optId => {
+          const opt = (q.options || []).find(o => o.id === optId);
+          if (opt) {
+            const w = opt.weight_percentage !== undefined ? Number(opt.weight_percentage) : (opt.is_correct || q.correctOptionId === opt.id ? 100 : 0);
+            netWeight += w;
+          }
+        });
+
+        const clampedWeight = Math.max(0, netWeight);
+        const normWeight = Math.abs(clampedWeight - 100) < 0.01 ? 100 : clampedWeight;
+        const earned = (normWeight / 100) * qPoints;
+
+        totalEarnedPoints += earned;
+        questionResults[q.id] = {
+          rawScore: Math.round(earned * 100) / 100,
+          maxPoints: qPoints,
+          percentage: Math.round(normWeight * 100) / 100
+        };
+      });
+
+      const scorePercent = totalMaxPoints > 0 ? Math.round((totalEarnedPoints / totalMaxPoints) * 100) : 100;
+      const grade = totalMaxPoints > 0 ? Math.round(((totalEarnedPoints / totalMaxPoints) * rt.maxGrade) * 100) / 100 : rt.maxGrade;
+      const isPassed = grade >= rt.passingGrade;
+
+      const dateStr = new Date().toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+
+      const newRecord = {
+        attemptNumber: rt.attemptsHistory.length + 1,
+        date: dateStr,
+        userAnswers: { ...rt.userAnswers },
+        questionResults,
+        grade,
+        maxGrade: rt.maxGrade,
+        percentage: scorePercent,
+        isPassed
+      };
+
+      rt.attemptsHistory.push(newRecord);
+      rt.lastResult = newRecord;
+
+      try {
+        ScormWrapper.setScoreAndStatus(scorePercent, isPassed ? 'passed' : 'failed');
+        ScormWrapper.setValue('cmi.core.score.raw', String(scorePercent));
+        ScormWrapper.setValue('cmi.core.lesson_status', isPassed ? 'passed' : 'failed');
+
+        const prevSuspend = ScormWrapper.getValue('cmi.suspend_data');
+        let suspendObj = {};
+        if (prevSuspend && prevSuspend.startsWith('{')) suspendObj = JSON.parse(prevSuspend);
+        suspendObj.quizAttempts = suspendObj.quizAttempts || {};
+        suspendObj.quizAttempts[qId] = rt.attemptsHistory;
+
+        ScormWrapper.setValue('cmi.suspend_data', JSON.stringify(suspendObj));
+        ScormWrapper.commit();
+      } catch (e) {}
+
+      try {
+        localStorage.setItem('mooc_quiz_history_' + qId, JSON.stringify(rt.attemptsHistory));
+      } catch (e) {}
+
+      rt.showResultModal = true;
+      markCompleted(qId);
+      renderMainView();
+
+      if (isAutoSubmit) {
+        alert('⏰ ¡El tiempo asignado se ha agotado! Sus respuestas han sido enviadas automáticamente.');
       }
     }
 
