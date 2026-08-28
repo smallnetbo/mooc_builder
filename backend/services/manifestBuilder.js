@@ -4,9 +4,10 @@ const { create } = require('xmlbuilder2');
 
 /**
  * @param {object} course - JSON del curso
+ * @param {Array<string>} [assetFiles] - Lista de rutas relativas de archivos adicionales (ej: imágenes)
  * @returns {{ xml: string }}
  */
-function buildManifest(course) {
+function buildManifest(course, assetFiles = []) {
   const doc = create({ version: '1.0', standalone: true })
     .ele('manifest', {
       identifier: `MANIFEST-${course.id || 'course'}`,
@@ -77,6 +78,14 @@ function buildManifest(course) {
   });
   resEl.ele('file', { href: 'index.html' });
   resEl.ele('file', { href: 'shared/scorm-wrapper.js' });
+
+  if (Array.isArray(assetFiles)) {
+    assetFiles.forEach((fileRelPath) => {
+      if (fileRelPath) {
+        resEl.ele('file', { href: fileRelPath });
+      }
+    });
+  }
 
   return { xml: doc.end({ prettyPrint: true }) };
 }

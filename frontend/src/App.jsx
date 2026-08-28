@@ -554,13 +554,78 @@ export default function App() {
               </div>
 
               <div>
-                <label className="font-semibold text-slate-700 block mb-1">URL Imagen de Fondo (Hero Banner)</label>
-                <input
-                  type="text"
-                  className="w-full border border-slate-300 rounded px-3 py-1.5 focus:outline-none focus:border-[#f58220]"
-                  value={activeModule.coverImage || ''}
-                  onChange={(e) => updateModuleMeta(activeModule.id, { coverImage: e.target.value })}
-                />
+                <label className="font-semibold text-slate-700 block mb-1">Imagen de Fondo (Hero Banner de Carátula)</label>
+                
+                {/* Opciones de carga: Ordenador vs URL */}
+                <div className="space-y-2 pt-1">
+                  <div className="flex items-center space-x-3">
+                    <label className="flex items-center space-x-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold px-3 py-1.5 rounded cursor-pointer border border-slate-300 transition-colors">
+                      <svg className="w-4 h-4 text-[#f58220]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+                      </svg>
+                      <span>Cargar desde equipo</span>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (!file) return;
+                          if (file.size > 10 * 1024 * 1024) {
+                            alert('La imagen no debe superar los 10MB.');
+                            return;
+                          }
+                          const reader = new FileReader();
+                          reader.onload = (event) => {
+                            if (event.target?.result) {
+                              updateModuleMeta(activeModule.id, { coverImage: event.target.result });
+                            }
+                          };
+                          reader.readAsDataURL(file);
+                        }}
+                      />
+                    </label>
+
+                    {activeModule.coverImage && (
+                      <button
+                        type="button"
+                        onClick={() => updateModuleMeta(activeModule.id, { coverImage: '' })}
+                        className="text-rose-600 hover:text-rose-800 text-xs font-semibold underline cursor-pointer"
+                      >
+                        Quitar imagen
+                      </button>
+                    )}
+                  </div>
+
+                  <div>
+                    <input
+                      type="text"
+                      placeholder="O pegue una URL de imagen (https://...)"
+                      className="w-full border border-slate-300 rounded px-3 py-1.5 text-xs focus:outline-none focus:border-[#f58220]"
+                      value={activeModule.coverImage || ''}
+                      onChange={(e) => updateModuleMeta(activeModule.id, { coverImage: e.target.value })}
+                    />
+                  </div>
+
+                  {/* Vista Previa de la Carátula */}
+                  {activeModule.coverImage ? (
+                    <div className="relative rounded-lg overflow-hidden border border-slate-200 h-28 bg-slate-900 group">
+                      <img
+                        src={activeModule.coverImage}
+                        alt="Vista previa carátula"
+                        className="w-full h-full object-cover opacity-80"
+                        onError={(e) => { e.target.style.display = 'none'; }}
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent flex items-end p-2">
+                        <span className="text-[10px] font-semibold text-white bg-slate-800/80 px-2 py-0.5 rounded backdrop-blur-xs">
+                          {activeModule.coverImage.startsWith('data:') ? '📷 Imagen local cargada (Se guardará en el ZIP)' : '🌐 URL Externa (Se empaquetará en el ZIP)'}
+                        </span>
+                      </div>
+                    </div>
+                  ) : (
+                    <p className="text-[11px] text-slate-400 italic">No hay imagen asignada. Se usarán los fondos por defecto en el módulo.</p>
+                  )}
+                </div>
               </div>
 
               <div>

@@ -1749,32 +1749,105 @@ function generateStandalonePlayerHTML(course) {
 </html>`;
 }
 
-function buildScormPackageBuffer(course, moduleId = null) {
-  return new Promise((resolve, reject) => {
-    try {
-      let exportCourse = course;
-      let filename = '';
+async function processCourseImageAssets(exportCourse) {
+  const assetFiles = [];
+  const imageBuffers = [];
 
-      if (moduleId) {
-        const targetModule = (course.modules || []).find((m) => m.id === moduleId);
-        if (targetModule) {
-          exportCourse = {
-            ...course,
-            id: `${course.id}-${targetModule.id}`,
-            title: `${targetModule.number ? targetModule.number + ': ' : ''}${targetModule.title}`,
-            modules: [targetModule],
-          };
-          const safeModTitle = `${targetModule.number || 'Modulo'}_${targetModule.title}`.replace(/[^a-zA-Z0-9_-]/g, '_');
-          filename = `${safeModTitle}.zip`;
+  if (!exportCourse || !Array.isArray(exportCourse.modules)) {
+    return { processedCourse: exportCourse, assetFiles, imageBuffers };
+  }
+
+  const clonedCourse = JSON.parse(JSON.stringify(exportCourse));
+
+  for (let mIdx = 0; mIdx < clonedCourse.modules.length; mIdx++) {
+    const mod = clonedCourse.modules[mIdx];
+    if (mod && mod.coverImage) {
+      const imgStr = String(mod.coverImage).trim();
+      const modId = mod.id || `mod-${mIdx}`;
+
+      if (imgStr.startsWith('data:image/')) {
+        try {
+          const match = imgStr.match(/^data:image\/([a-zA-Z0-9\+\-\.]+);base64,(.+)$/);
+          if (match) {
+            let ext = match[1].toLowerCase();
+            if (ext === 'jpeg') ext = 'jpg';
+            if (ext === 'svg+xml') ext = 'svg';
+            const base64Data = match[2];
+            const buffer = Buffer.from(base64Data, 'base64');
+            const relPath = `assets/images/cover_${modId}.${ext}`;
+
+            imageBuffers.push({ relPath, buffer });
+            assetFiles.push(relPath);
+            mod.coverImage = relPath;
+          }
+        } catch (err) {
+          console.error(`Error procesando imagen base64 del módulo ${modId}:`, err);
+        }
+      } else if (imgStr.startsWith('http://') || imgStr.startsWith('https://')) {
+        try {
+          const controller = new AbortController();
+          const timeoutId = setTimeout(() => controller.abort(), 6000);
+          const res = await fetch(imgStr, { signal: controller.signal });
+          clearTimeout(timeoutId);
+
+          if (res.ok) {
+            const arrayBuf = await res.arrayBuffer();
+            const buffer = Buffer.from(arrayBuf);
+
+            let ext = 'jpg';
+            const contentType = res.headers.get('content-type') || '';
+            if (contentType.includes('png')) ext = 'png';
+            else if (contentType.includes('svg')) ext = 'svg';
+            else if (contentType.includes('webp')) ext = 'webp';
+            else if (contentType.includes('gif')) ext = 'gif';
+            else {
+              const urlExtMatch = imgStr.match(/\.(png|jpg|jpeg|svg|webp|gif)(\?|$)/i);
+              if (urlExtMatch) ext = urlExtMatch[1].toLowerCase();
+            }
+
+            const relPath = `assets/images/cover_${modId}.${ext}`;
+            imageBuffers.push({ relPath, buffer });
+            assetFiles.push(relPath);
+            mod.coverImage = relPath;
+          }
+        } catch (err) {
+          console.warn(`No se pudo descargar la imagen remota ${imgStr} para el módulo ${modId}:`, err.message);
         }
       }
+    }
+  }
 
-      if (!filename) {
-        const safeTitle = (course.title || 'curso_scorm').replace(/[^a-zA-Z0-9_-]/g, '_');
-        filename = `${safeTitle}_Completo.zip`;
-      }
+  return { processedCourse: clonedCourse, assetFiles, imageBuffers };
+}
 
-      const { xml } = buildManifest(exportCourse);
+async function buildScormPackageBuffer(course, moduleId = null) {
+  let exportCourse = course;
+  let filename = '';
+
+  if (moduleId) {
+    const targetModule = (course.modules || []).find((m) => m.id === moduleId);
+    if (targetModule) {
+      exportCourse = {
+        ...course,
+        id: `${course.id}-${targetModule.id}`,
+        title: `${targetModule.number ? targetModule.number + ': ' : ''}${targetModule.title}`,
+        modules: [targetModule],
+      };
+      const safeModTitle = `${targetModule.number || 'Modulo'}_${targetModule.title}`.replace(/[^a-zA-Z0-9_-]/g, '_');
+      filename = `${safeModTitle}.zip`;
+    }
+  }
+
+  if (!filename) {
+    const safeTitle = (course.title || 'curso_scorm').replace(/[^a-zA-Z0-9_-]/g, '_');
+    filename = `${safeTitle}_Completo.zip`;
+  }
+
+  const { processedCourse, assetFiles, imageBuffers } = await processCourseImageAssets(exportCourse);
+
+  return new Promise((resolve, reject) => {
+    try {
+      const { xml } = buildManifest(processedCourse, assetFiles);
       const archive = archiver('zip', { zlib: { level: 9 } });
       const chunks = [];
 
@@ -1792,8 +1865,13 @@ function buildScormPackageBuffer(course, moduleId = null) {
         archive.append('window.ScormWrapper = { init:()=>{}, terminate:()=>{}, setLocation:()=>{}, setStatus:()=>{}, setScoreAndStatus:()=>{} };', { name: 'shared/scorm-wrapper.js' });
       }
 
+      // Agregar imágenes procesadas al paquete ZIP
+      for (const item of imageBuffers) {
+        archive.append(item.buffer, { name: item.relPath });
+      }
+
       // Generar y agregar el HTML5 autónomo del reproductor interactivo (index.html)
-      const playerHtml = generateStandalonePlayerHTML(exportCourse);
+      const playerHtml = generateStandalonePlayerHTML(processedCourse);
       archive.append(playerHtml, { name: 'index.html' });
 
       archive.finalize().catch(reject);
