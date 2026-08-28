@@ -373,7 +373,22 @@
             }
           ]
         }
-      ]
+      ],
+      "coverConfig": {
+        "bgColor": "#0f172a",
+        "bgPositionX": 50,
+        "bgPositionY": 50,
+        "bgSize": "cover",
+        "bgRepeat": "no-repeat",
+        "overlayEnabled": false,
+        "overlayTopColor": "#000000",
+        "overlayTopOpacity": 50,
+        "overlayBottomColor": "#0f172a",
+        "overlayBottomOpacity": 70,
+        "patternStyle": "none",
+        "patternOpacity": 20,
+        "curveStyle": "wave"
+      }
     },
     {
       "id": "mod-2",

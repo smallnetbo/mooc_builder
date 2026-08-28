@@ -1017,15 +1017,70 @@ function generateStandalonePlayerHTML(course) {
           '</div>';
         }).join('');
 
-        coverDiv.innerHTML = '<div class="cover-hero">' +
-          '<div class="cover-hero-bg" style="background-image: url(' + "'" + (activeModule.coverImage || 'https://images.unsplash.com/photo-1556761175-5973dc0f32e7?q=80&w=1600&auto=format&fit=crop') + "'" + ')"></div>' +
-          '<div class="cover-hero-overlay"></div>' +
+        const cfg = activeModule.coverConfig || {};
+        const bgPosX = cfg.bgPositionX !== undefined ? cfg.bgPositionX : 50;
+        const bgPosY = cfg.bgPositionY !== undefined ? cfg.bgPositionY : 50;
+        const bgSize = cfg.bgSize || 'cover';
+        const bgRepeat = cfg.bgRepeat || 'no-repeat';
+        const bgColor = cfg.bgColor || '#0f172a';
+
+        const overlayEnabled = cfg.overlayEnabled !== false;
+        const topCol = cfg.overlayTopColor || '#000000';
+        const topOp = (cfg.overlayTopOpacity !== undefined ? cfg.overlayTopOpacity : 50) / 100;
+        const botCol = cfg.overlayBottomColor || activeModule.primaryColor || '#0f172a';
+        const botOp = (cfg.overlayBottomOpacity !== undefined ? cfg.overlayBottomOpacity : 70) / 100;
+
+        function toRgba(hex, alpha) {
+          let c = String(hex || '#000000').replace('#', '');
+          if (c.length === 3) c = c.split('').map(x => x + x).join('');
+          const num = parseInt(c, 16);
+          if (isNaN(num)) return 'rgba(0,0,0,' + alpha + ')';
+          return 'rgba(' + ((num >> 16) & 255) + ',' + ((num >> 8) & 255) + ',' + (num & 255) + ',' + alpha + ')';
+        }
+
+        const overlayCss = overlayEnabled
+          ? 'background: linear-gradient(to bottom, ' + toRgba(topCol, topOp) + ', ' + toRgba(botCol, botOp) + ');'
+          : 'display: none;';
+
+        const patternStyle = cfg.patternStyle || 'diamonds';
+        const patternOp = (cfg.patternOpacity !== undefined ? cfg.patternOpacity : 20) / 100;
+        let patternHtml = '';
+        if (patternStyle !== 'none') {
+          let patternSvg = '';
+          if (patternStyle === 'diamonds') {
+            patternSvg = '<pattern id="scorm-p-diamonds" width="40" height="40" patternUnits="userSpaceOnUse"><path d="M20 0 L40 20 L20 40 L0 20 Z" fill="none" stroke="currentColor" stroke-width="1.2" stroke-opacity="0.7"/></pattern>';
+          } else if (patternStyle === 'dots') {
+            patternSvg = '<pattern id="scorm-p-dots" width="20" height="20" patternUnits="userSpaceOnUse"><circle cx="10" cy="10" r="3" fill="currentColor" fill-opacity="0.7"/></pattern>';
+          } else if (patternStyle === 'grid') {
+            patternSvg = '<pattern id="scorm-p-grid" width="30" height="30" patternUnits="userSpaceOnUse"><path d="M 30 0 L 0 0 0 30" fill="none" stroke="currentColor" stroke-width="1.2" stroke-opacity="0.5"/></pattern>';
+          }
+          patternHtml = '<div style="position:absolute; top:0; left:0; width:280px; height:280px; pointer-events:none; z-index:10; opacity:' + patternOp + ';"><svg width="100%" height="100%" viewBox="0 0 200 200"><defs>' + patternSvg + '</defs><rect width="200" height="200" fill="url(#scorm-p-' + patternStyle + ')"/></svg></div>';
+        }
+
+        const CURVES = {
+          smooth: 'M0,0 Q720,130 1440,0 L1440,120 L0,120 Z',
+          wave: 'M0,30 Q360,110 720,40 T1440,50 L1440,120 L0,120 Z',
+          slant: 'M0,0 L1440,75 L1440,120 L0,120 Z',
+          straight: 'M0,0 L1440,0 L1440,120 L0,120 Z',
+          arch: 'M0,75 Q720,-35 1440,75 L1440,120 L0,120 Z'
+        };
+        const curvePath = CURVES[cfg.curveStyle] || CURVES.smooth;
+
+        const coverImgStyle = "background-image: url('" + (activeModule.coverImage || 'https://images.unsplash.com/photo-1556761175-5973dc0f32e7?q=80&w=1600&auto=format&fit=crop') + "'); " +
+          "background-position: " + bgPosX + "% " + bgPosY + "%; " +
+          "background-size: " + bgSize + "; " +
+          "background-repeat: " + bgRepeat + "; opacity: 0.85;";
+
+        coverDiv.innerHTML = '<div class="cover-hero" style="background-color: ' + bgColor + ';">' +
+          '<div class="cover-hero-bg" style="' + coverImgStyle + '"></div>' +
+          '<div class="cover-hero-overlay" style="' + overlayCss + '"></div>' +
+          patternHtml +
           '<div class="cover-hero-content">' +
             '<h1 class="cover-hero-title">' + (activeModule.number ? escapeHtml(activeModule.number) + ': ' : '') + escapeHtml(activeModule.title || '') + '</h1>' +
             '<button class="btn-cover-continue" onclick="startOrContinue()">CONTINUAR</button>' +
           '</div>' +
           '<div class="cover-hero-curve">' +
-            '<svg viewBox="0 0 1440 120" preserveAspectRatio="none"><path d="M0,0 Q720,130 1440,0 L1440,120 L0,120 Z" fill="currentColor"></path></svg>' +
+            '<svg viewBox="0 0 1440 120" preserveAspectRatio="none"><path d="' + curvePath + '" fill="currentColor"></path></svg>' +
           '</div>' +
         '</div>' +
         '<div class="cover-body">' +

@@ -27,6 +27,8 @@ import {
   Check
 } from 'lucide-react';
 
+import { DEFAULT_COVER_CONFIG, getFullCoverConfig, getOverlayStyle, CURVE_PATHS } from './utils/coverConfig';
+
 export default function App() {
   const {
     course,
@@ -52,6 +54,7 @@ export default function App() {
   } = useCourseStore();
 
   const [showModuleMetaModal, setShowModuleMetaModal] = useState(false);
+  const [coverTab, setCoverTab] = useState('panel1');
   const [showExportMenu, setShowExportMenu] = useState(false);
   const [showCourseManagerModal, setShowCourseManagerModal] = useState(false);
   const [serverCourses, setServerCourses] = useState([]);
@@ -509,148 +512,487 @@ export default function App() {
       )}
 
       {/* MODAL CONFIGURACIÓN DE CARÁTULA Y CITA HERO DEL MÓDULO */}
-      {showModuleMetaModal && activeModule && (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl shadow-2xl max-w-lg w-full p-6 space-y-4">
-            <h3 className="text-base font-bold text-slate-800 border-b pb-2">
-              Editar Carátula del Módulo ({activeModule.number || 'Módulo'})
-            </h3>
+      {showModuleMetaModal && activeModule && (() => {
+        const cfg = getFullCoverConfig(activeModule.coverConfig);
+        const updateCoverConfig = (patch) => {
+          updateModuleMeta(activeModule.id, {
+            coverConfig: { ...cfg, ...patch }
+          });
+        };
+        const overlayStyle = getOverlayStyle(cfg, activeModule.primaryColor || '#f58220');
+        const curvePath = CURVE_PATHS[cfg.curveStyle] || CURVE_PATHS.smooth;
 
-            <div className="space-y-3 text-xs">
-              <div>
-                <label className="font-semibold text-slate-700 block mb-1">Título del Módulo</label>
-                <input
-                  type="text"
-                  className="w-full border border-slate-300 rounded px-3 py-1.5 focus:outline-none focus:border-[#f58220]"
-                  value={activeModule.title}
-                  onChange={(e) => updateModuleMeta(activeModule.id, { title: e.target.value })}
-                />
-              </div>
+        return (
+          <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-xl shadow-2xl max-w-2xl w-full p-6 space-y-4 max-h-[90vh] overflow-y-auto">
+              <h3 className="text-base font-bold text-slate-800 border-b pb-2 flex items-center justify-between">
+                <span>Editar Carátula del Módulo ({activeModule.number || 'Módulo'})</span>
+                <span className="text-xs font-mono text-slate-400 font-normal">ID: {activeModule.id}</span>
+              </h3>
 
-              <div>
-                <label className="font-semibold text-slate-700 block mb-1">Color Tema del Módulo</label>
-                <div className="flex items-center space-x-2 pt-1">
-                  {['#e11d48', '#f58220', '#2563eb', '#16a34a', '#7c3aed', '#0d9488', '#db2777'].map((c) => (
-                    <button
-                      key={c}
-                      type="button"
-                      onClick={() => updateModuleMeta(activeModule.id, { primaryColor: c })}
-                      className={`w-6 h-6 rounded-full border-2 transition-all cursor-pointer ${
-                        (activeModule.primaryColor || '#f58220') === c ? 'scale-125 border-slate-900 shadow-md ring-2 ring-slate-300' : 'border-white hover:scale-110'
-                      }`}
-                      style={{ backgroundColor: c }}
-                      title={`Seleccionar color ${c}`}
-                    />
-                  ))}
+              {/* DATOS BÁSICOS DEL MÓDULO */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                <div>
+                  <label className="font-semibold text-slate-700 block mb-1">Título del Módulo</label>
                   <input
-                    type="color"
-                    className="w-7 h-7 p-0.5 border border-slate-300 rounded cursor-pointer shrink-0"
-                    value={activeModule.primaryColor || '#f58220'}
-                    onChange={(e) => updateModuleMeta(activeModule.id, { primaryColor: e.target.value })}
-                    title="Color personalizado"
+                    type="text"
+                    className="w-full border border-slate-300 rounded px-3 py-1.5 focus:outline-none focus:border-[#f58220]"
+                    value={activeModule.title}
+                    onChange={(e) => updateModuleMeta(activeModule.id, { title: e.target.value })}
                   />
-                  <span className="font-mono text-slate-500 uppercase">{activeModule.primaryColor || '#f58220'}</span>
+                </div>
+
+                <div>
+                  <label className="font-semibold text-slate-700 block mb-1">Color Tema del Módulo</label>
+                  <div className="flex items-center space-x-2 pt-1">
+                    {['#e11d48', '#f58220', '#2563eb', '#16a34a', '#7c3aed', '#0d9488', '#db2777'].map((c) => (
+                      <button
+                        key={c}
+                        type="button"
+                        onClick={() => updateModuleMeta(activeModule.id, { primaryColor: c })}
+                        className={`w-5 h-5 rounded-full border-2 transition-all cursor-pointer ${
+                          (activeModule.primaryColor || '#f58220') === c ? 'scale-125 border-slate-900 shadow-md ring-2 ring-slate-300' : 'border-white hover:scale-110'
+                        }`}
+                        style={{ backgroundColor: c }}
+                        title={`Seleccionar color ${c}`}
+                      />
+                    ))}
+                    <input
+                      type="color"
+                      className="w-6 h-6 p-0.5 border border-slate-300 rounded cursor-pointer shrink-0"
+                      value={activeModule.primaryColor || '#f58220'}
+                      onChange={(e) => updateModuleMeta(activeModule.id, { primaryColor: e.target.value })}
+                      title="Color personalizado"
+                    />
+                  </div>
                 </div>
               </div>
 
-              <div>
-                <label className="font-semibold text-slate-700 block mb-1">Imagen de Fondo (Hero Banner de Carátula)</label>
-                
-                {/* Opciones de carga: Ordenador vs URL */}
-                <div className="space-y-2 pt-1">
-                  <div className="flex items-center space-x-3">
-                    <label className="flex items-center space-x-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold px-3 py-1.5 rounded cursor-pointer border border-slate-300 transition-colors">
-                      <svg className="w-4 h-4 text-[#f58220]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
-                      </svg>
-                      <span>Cargar desde equipo</span>
-                      <input
-                        type="file"
-                        accept="image/*"
-                        className="hidden"
-                        onChange={(e) => {
-                          const file = e.target.files?.[0];
-                          if (!file) return;
-                          if (file.size > 10 * 1024 * 1024) {
-                            alert('La imagen no debe superar los 10MB.');
-                            return;
-                          }
-                          const reader = new FileReader();
-                          reader.onload = (event) => {
-                            if (event.target?.result) {
-                              updateModuleMeta(activeModule.id, { coverImage: event.target.result });
-                            }
-                          };
-                          reader.readAsDataURL(file);
-                        }}
-                      />
-                    </label>
-
-                    {activeModule.coverImage && (
-                      <button
-                        type="button"
-                        onClick={() => updateModuleMeta(activeModule.id, { coverImage: '' })}
-                        className="text-rose-600 hover:text-rose-800 text-xs font-semibold underline cursor-pointer"
-                      >
-                        Quitar imagen
-                      </button>
-                    )}
-                  </div>
-
-                  <div>
-                    <input
-                      type="text"
-                      placeholder="O pegue una URL de imagen (https://...)"
-                      className="w-full border border-slate-300 rounded px-3 py-1.5 text-xs focus:outline-none focus:border-[#f58220]"
-                      value={activeModule.coverImage || ''}
-                      onChange={(e) => updateModuleMeta(activeModule.id, { coverImage: e.target.value })}
+              {/* VISTA PREVIA EN TIEMPO REAL */}
+              <div className="space-y-1">
+                <label className="font-semibold text-slate-700 text-xs block">Vista Previa de Carátula (Hero Banner)</label>
+                <div
+                  className="relative rounded-lg overflow-hidden border border-slate-300 h-36 flex items-center justify-center text-white transition-all shadow-inner"
+                  style={{ backgroundColor: cfg.bgColor || '#0f172a' }}
+                >
+                  {/* Capa de Imagen Base */}
+                  {activeModule.coverImage && (
+                    <div
+                      className="absolute inset-0 transition-all duration-200"
+                      style={{
+                        backgroundImage: `url('${activeModule.coverImage}')`,
+                        backgroundPosition: `${cfg.bgPositionX}% ${cfg.bgPositionY}%`,
+                        backgroundSize: cfg.bgSize || 'cover',
+                        backgroundRepeat: cfg.bgRepeat || 'no-repeat',
+                        opacity: 0.85,
+                      }}
                     />
+                  )}
+
+                  {/* Capa de Superposición (Overlay) */}
+                  {cfg.overlayEnabled && (
+                    <div className="absolute inset-0 pointer-events-none transition-all duration-200" style={overlayStyle} />
+                  )}
+
+                  {/* Patrón Geométrico (Rombos / Puntos / Cuadrícula) */}
+                  {cfg.patternStyle && cfg.patternStyle !== 'none' && (
+                    <div
+                      className="absolute top-0 left-0 w-32 h-32 pointer-events-none z-10"
+                      style={{ opacity: (cfg.patternOpacity ?? 20) / 100 }}
+                    >
+                      <svg className="w-full h-full text-white" viewBox="0 0 100 100">
+                        <defs>
+                          {cfg.patternStyle === 'diamonds' && (
+                            <pattern id="prev-diamonds" width="20" height="20" patternUnits="userSpaceOnUse">
+                              <path d="M10 0 L20 10 L10 20 L0 10 Z" fill="none" stroke="currentColor" strokeWidth="1" strokeOpacity="0.8" />
+                            </pattern>
+                          )}
+                          {cfg.patternStyle === 'dots' && (
+                            <pattern id="prev-dots" width="10" height="10" patternUnits="userSpaceOnUse">
+                              <circle cx="5" cy="5" r="2" fill="currentColor" fillOpacity="0.8" />
+                            </pattern>
+                          )}
+                          {cfg.patternStyle === 'grid' && (
+                            <pattern id="prev-grid" width="15" height="15" patternUnits="userSpaceOnUse">
+                              <path d="M 15 0 L 0 0 0 15" fill="none" stroke="currentColor" strokeWidth="1" strokeOpacity="0.6" />
+                            </pattern>
+                          )}
+                        </defs>
+                        <rect width="100" height="100" fill={`url(#prev-${cfg.patternStyle})`} />
+                      </svg>
+                    </div>
+                  )}
+
+                  {/* Texto Título */}
+                  <div className="relative z-20 text-center px-4">
+                    <span className="text-xs font-bold uppercase tracking-wider drop-shadow-md">
+                      {activeModule.number ? `${activeModule.number}: ` : ''}{activeModule.title || 'Módulo'}
+                    </span>
                   </div>
 
-                  {/* Vista Previa de la Carátula */}
-                  {activeModule.coverImage ? (
-                    <div className="relative rounded-lg overflow-hidden border border-slate-200 h-28 bg-slate-900 group">
-                      <img
-                        src={activeModule.coverImage}
-                        alt="Vista previa carátula"
-                        className="w-full h-full object-cover opacity-80"
-                        onError={(e) => { e.target.style.display = 'none'; }}
-                      />
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent flex items-end p-2">
-                        <span className="text-[10px] font-semibold text-white bg-slate-800/80 px-2 py-0.5 rounded backdrop-blur-xs">
-                          {activeModule.coverImage.startsWith('data:') ? '📷 Imagen local cargada (Se guardará en el ZIP)' : '🌐 URL Externa (Se empaquetará en el ZIP)'}
-                        </span>
+                  {/* Curva Inferior */}
+                  <div className="absolute bottom-0 left-0 right-0 w-full overflow-hidden leading-none z-20 pointer-events-none">
+                    <svg className="relative block w-full h-8 text-white" viewBox="0 0 1440 120" preserveAspectRatio="none">
+                      <path d={curvePath} fill="currentColor" />
+                    </svg>
+                  </div>
+                </div>
+              </div>
+
+              {/* NAVEGACIÓN POR PESTAÑAS DE CONFIGURACIÓN */}
+              <div className="border-b border-slate-200 flex space-x-1 pt-2">
+                {[
+                  { id: 'panel1', label: '🖼️ Capa Imagen Base' },
+                  { id: 'panel2', label: '🎨 Superposición (Degradado)' },
+                  { id: 'panel3', label: '🔷 Patrón Geométrico' },
+                  { id: 'panel4', label: '🌊 Curva SVG' }
+                ].map((tab) => (
+                  <button
+                    key={tab.id}
+                    type="button"
+                    onClick={() => setCoverTab(tab.id)}
+                    className={`px-3 py-1.5 text-xs font-semibold rounded-t border-b-2 cursor-pointer transition-colors ${
+                      coverTab === tab.id
+                        ? 'border-[#f58220] text-[#f58220] bg-orange-50/50'
+                        : 'border-transparent text-slate-500 hover:text-slate-700 hover:bg-slate-50'
+                    }`}
+                  >
+                    {tab.label}
+                  </button>
+                ))}
+              </div>
+
+              {/* CONTENIDO DE PESTAÑAS DE CONFIGURACIÓN */}
+              <div className="p-3 bg-slate-50 rounded-lg border border-slate-200 text-xs space-y-3">
+                {/* PANEL 1: CONFIGURACIÓN DE LA CAPA DE IMAGEN BASE */}
+                {coverTab === 'panel1' && (
+                  <div className="space-y-3">
+                    <div>
+                      <label className="font-semibold text-slate-700 block mb-1">Choose color & file (Fondo e Imagen)</label>
+                      <div className="flex items-center space-x-3 pt-1">
+                        <div className="flex items-center space-x-1 bg-white border border-slate-300 rounded px-2 py-1">
+                          <input
+                            type="color"
+                            className="w-5 h-5 p-0 border-0 cursor-pointer shrink-0"
+                            value={cfg.bgColor || '#0f172a'}
+                            onChange={(e) => updateCoverConfig({ bgColor: e.target.value })}
+                            title="Color de fondo base"
+                          />
+                          <span className="font-mono text-[11px] uppercase text-slate-600">{cfg.bgColor || '#0f172a'}</span>
+                        </div>
+
+                        <label className="flex items-center space-x-1.5 bg-slate-200 hover:bg-slate-300 text-slate-800 font-semibold px-3 py-1 rounded cursor-pointer border border-slate-300 transition-colors">
+                          <svg className="w-3.5 h-3.5 text-[#f58220]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+                          </svg>
+                          <span>Cargar desde equipo</span>
+                          <input
+                            type="file"
+                            accept="image/*"
+                            className="hidden"
+                            onChange={(e) => {
+                              const file = e.target.files?.[0];
+                              if (!file) return;
+                              if (file.size > 10 * 1024 * 1024) {
+                                alert('La imagen no debe superar los 10MB.');
+                                return;
+                              }
+                              const reader = new FileReader();
+                              reader.onload = (event) => {
+                                if (event.target?.result) {
+                                  updateModuleMeta(activeModule.id, { coverImage: event.target.result });
+                                }
+                              };
+                              reader.readAsDataURL(file);
+                            }}
+                          />
+                        </label>
+
+                        {activeModule.coverImage && (
+                          <button
+                            type="button"
+                            onClick={() => updateModuleMeta(activeModule.id, { coverImage: '' })}
+                            className="text-rose-600 hover:text-rose-800 font-semibold underline cursor-pointer"
+                          >
+                            Quitar imagen
+                          </button>
+                        )}
+                      </div>
+
+                      <div className="pt-2">
+                        <input
+                          type="text"
+                          placeholder="O pegue una URL de imagen (https://...)"
+                          className="w-full border border-slate-300 rounded px-3 py-1 bg-white focus:outline-none focus:border-[#f58220]"
+                          value={activeModule.coverImage || ''}
+                          onChange={(e) => updateModuleMeta(activeModule.id, { coverImage: e.target.value })}
+                        />
                       </div>
                     </div>
-                  ) : (
-                    <p className="text-[11px] text-slate-400 italic">No hay imagen asignada. Se usarán los fondos por defecto en el módulo.</p>
-                  )}
-                </div>
+
+                    {/* Background Position X e Y */}
+                    <div>
+                      <label className="font-semibold text-slate-700 block mb-1">Background Position</label>
+                      <div className="grid grid-cols-2 gap-3 bg-white p-2.5 rounded border border-slate-200">
+                        <div>
+                          <div className="flex justify-between items-center mb-1">
+                            <span className="text-slate-600 font-medium">X: {cfg.bgPositionX}%</span>
+                          </div>
+                          <div className="flex items-center space-x-2">
+                            <input
+                              type="range"
+                              min="0"
+                              max="100"
+                              className="w-full accent-[#f58220]"
+                              value={cfg.bgPositionX ?? 50}
+                              onChange={(e) => updateCoverConfig({ bgPositionX: Number(e.target.value) })}
+                            />
+                            <input
+                              type="number"
+                              min="0"
+                              max="100"
+                              className="w-14 border border-slate-300 rounded px-1 py-0.5 text-center font-mono"
+                              value={cfg.bgPositionX ?? 50}
+                              onChange={(e) => updateCoverConfig({ bgPositionX: Math.min(100, Math.max(0, Number(e.target.value))) })}
+                            />
+                          </div>
+                        </div>
+
+                        <div>
+                          <div className="flex justify-between items-center mb-1">
+                            <span className="text-slate-600 font-medium">Y: {cfg.bgPositionY}%</span>
+                          </div>
+                          <div className="flex items-center space-x-2">
+                            <input
+                              type="range"
+                              min="0"
+                              max="100"
+                              className="w-full accent-[#f58220]"
+                              value={cfg.bgPositionY ?? 50}
+                              onChange={(e) => updateCoverConfig({ bgPositionY: Number(e.target.value) })}
+                            />
+                            <input
+                              type="number"
+                              min="0"
+                              max="100"
+                              className="w-14 border border-slate-300 rounded px-1 py-0.5 text-center font-mono"
+                              value={cfg.bgPositionY ?? 50}
+                              onChange={(e) => updateCoverConfig({ bgPositionY: Math.min(100, Math.max(0, Number(e.target.value))) })}
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Background Size & Background Repeat */}
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label className="font-semibold text-slate-700 block mb-1">Background Size</label>
+                        <select
+                          className="w-full border border-slate-300 rounded px-2.5 py-1.5 bg-white focus:outline-none focus:border-[#f58220]"
+                          value={cfg.bgSize || 'cover'}
+                          onChange={(e) => updateCoverConfig({ bgSize: e.target.value })}
+                        >
+                          <option value="cover">cover (Cubrir pantalla)</option>
+                          <option value="contain">contain (Contener completa)</option>
+                          <option value="auto">auto (Tamaño original)</option>
+                          <option value="100% 100%">100% 100% (Estirar exacta)</option>
+                        </select>
+                      </div>
+
+                      <div>
+                        <label className="font-semibold text-slate-700 block mb-1">Background Repeat</label>
+                        <select
+                          className="w-full border border-slate-300 rounded px-2.5 py-1.5 bg-white focus:outline-none focus:border-[#f58220]"
+                          value={cfg.bgRepeat || 'no-repeat'}
+                          onChange={(e) => updateCoverConfig({ bgRepeat: e.target.value })}
+                        >
+                          <option value="no-repeat">no-repeat (Sin repetición)</option>
+                          <option value="repeat">repeat (Repetir ambos ejes)</option>
+                          <option value="repeat-x">repeat-x (Repetir horizontal)</option>
+                          <option value="repeat-y">repeat-y (Repetir vertical)</option>
+                        </select>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* PANEL 2: CONFIGURACIÓN DE LA CAPA DE SUPERPOSICIÓN (OVERLAY) */}
+                {coverTab === 'panel2' && (
+                  <div className="space-y-3">
+                    <label className="flex items-center space-x-2 font-semibold text-slate-800 cursor-pointer bg-white p-2 rounded border border-slate-200">
+                      <input
+                        type="checkbox"
+                        className="accent-[#f58220] w-4 h-4"
+                        checked={cfg.overlayEnabled ?? true}
+                        onChange={(e) => updateCoverConfig({ overlayEnabled: e.target.checked })}
+                      />
+                      <span>Activar Capa de Superposición de Degradado (cover-hero-overlay)</span>
+                    </label>
+
+                    {cfg.overlayEnabled && (
+                      <div className="space-y-3 pt-1 bg-white p-3 rounded border border-slate-200">
+                        {/* Parada de Color Superior */}
+                        <div className="space-y-1">
+                          <label className="font-semibold text-slate-700 block">Parada de Color Superior (Top Color)</label>
+                          <div className="flex items-center space-x-3">
+                            <input
+                              type="color"
+                              className="w-8 h-8 p-0.5 border border-slate-300 rounded cursor-pointer shrink-0"
+                              value={cfg.overlayTopColor || '#000000'}
+                              onChange={(e) => updateCoverConfig({ overlayTopColor: e.target.value })}
+                            />
+                            <div className="flex-1 space-y-0.5">
+                              <div className="flex justify-between text-slate-600 font-medium">
+                                <span>Opacity</span>
+                                <span>{cfg.overlayTopOpacity ?? 50}%</span>
+                              </div>
+                              <input
+                                type="range"
+                                min="0"
+                                max="100"
+                                className="w-full accent-[#f58220]"
+                                value={cfg.overlayTopOpacity ?? 50}
+                                onChange={(e) => updateCoverConfig({ overlayTopOpacity: Number(e.target.value) })}
+                              />
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Parada de Color Inferior */}
+                        <div className="space-y-1 pt-2 border-t border-slate-100">
+                          <label className="font-semibold text-slate-700 block">Parada de Color Inferior (Bottom Color)</label>
+                          <div className="flex items-center space-x-3">
+                            <input
+                              type="color"
+                              className="w-8 h-8 p-0.5 border border-slate-300 rounded cursor-pointer shrink-0"
+                              value={cfg.overlayBottomColor || activeModule.primaryColor || '#0f172a'}
+                              onChange={(e) => updateCoverConfig({ overlayBottomColor: e.target.value })}
+                            />
+                            <div className="flex-1 space-y-0.5">
+                              <div className="flex justify-between text-slate-600 font-medium">
+                                <span>Opacity</span>
+                                <span>{cfg.overlayBottomOpacity ?? 70}%</span>
+                              </div>
+                              <input
+                                type="range"
+                                min="0"
+                                max="100"
+                                className="w-full accent-[#f58220]"
+                                value={cfg.overlayBottomOpacity ?? 70}
+                                onChange={(e) => updateCoverConfig({ overlayBottomOpacity: Number(e.target.value) })}
+                              />
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* PANEL 3: CONFIGURACIÓN DE PATRÓN GEOMÉTRICO */}
+                {coverTab === 'panel3' && (
+                  <div className="space-y-3">
+                    <div>
+                      <label className="font-semibold text-slate-700 block mb-1">Estilo de Patrón Geométrico</label>
+                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-1">
+                        {[
+                          { id: 'diamonds', label: '🔷 Rombos' },
+                          { id: 'dots', label: '⚪ Puntos' },
+                          { id: 'grid', label: '🏁 Cuadrícula' },
+                          { id: 'none', label: '🚫 Ninguno' }
+                        ].map((pat) => (
+                          <button
+                            key={pat.id}
+                            type="button"
+                            onClick={() => updateCoverConfig({ patternStyle: pat.id })}
+                            className={`p-2 rounded font-semibold border text-center transition-all cursor-pointer ${
+                              (cfg.patternStyle || 'diamonds') === pat.id
+                                ? 'border-[#f58220] bg-orange-50 text-[#f58220] shadow-xs'
+                                : 'border-slate-300 bg-white text-slate-700 hover:bg-slate-100'
+                            }`}
+                          >
+                            {pat.label}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    {cfg.patternStyle !== 'none' && (
+                      <div className="bg-white p-3 rounded border border-slate-200 space-y-1">
+                        <div className="flex justify-between text-slate-700 font-semibold">
+                          <span>Opacidad del Patrón</span>
+                          <span>{cfg.patternOpacity ?? 20}%</span>
+                        </div>
+                        <input
+                          type="range"
+                          min="0"
+                          max="100"
+                          className="w-full accent-[#f58220]"
+                          value={cfg.patternOpacity ?? 20}
+                          onChange={(e) => updateCoverConfig({ patternOpacity: Number(e.target.value) })}
+                        />
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* PANEL 4: CONFIGURACIÓN DE CURVA SVG INFERIOR */}
+                {coverTab === 'panel4' && (
+                  <div className="space-y-3">
+                    <label className="font-semibold text-slate-700 block mb-1">Estilo de Curva de Borde (Onda Inferior)</label>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1">
+                      {[
+                        { id: 'smooth', label: '🌊 Onda Cóncava Suave' },
+                        { id: 'wave', label: '〰️ Doble Onda Senoidal' },
+                        { id: 'slant', label: '📐 Diagonal en Ángulo' },
+                        { id: 'straight', label: '➖ Línea Recta' },
+                        { id: 'arch', label: '⭕ Arco Convexo' }
+                      ].map((crv) => (
+                        <button
+                          key={crv.id}
+                          type="button"
+                          onClick={() => updateCoverConfig({ curveStyle: crv.id })}
+                          className={`p-2.5 rounded font-semibold border text-left flex items-center justify-between transition-all cursor-pointer ${
+                            (cfg.curveStyle || 'smooth') === crv.id
+                              ? 'border-[#f58220] bg-orange-50 text-[#f58220] shadow-xs'
+                              : 'border-slate-300 bg-white text-slate-700 hover:bg-slate-100'
+                          }`}
+                        >
+                          <span>{crv.label}</span>
+                          {(cfg.curveStyle || 'smooth') === crv.id && <span className="font-bold">✓</span>}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
 
+              {/* OBJETIVO DEL MÓDULO */}
               <div>
-                <label className="font-semibold text-slate-700 block mb-1">Objetivo del Módulo</label>
+                <label className="font-semibold text-slate-700 block mb-1 text-xs">Objetivo del Módulo</label>
                 <textarea
-                  rows={3}
-                  className="w-full border border-slate-300 rounded px-3 py-1.5 focus:outline-none focus:border-[#f58220]"
+                  rows={2}
+                  className="w-full border border-slate-300 rounded px-3 py-1.5 text-xs focus:outline-none focus:border-[#f58220]"
                   value={activeModule.objective || ''}
                   onChange={(e) => updateModuleMeta(activeModule.id, { objective: e.target.value })}
                 />
               </div>
-            </div>
 
-            <div className="flex justify-end pt-2">
-              <button
-                onClick={() => setShowModuleMetaModal(false)}
-                className="text-white font-bold text-xs px-5 py-2 rounded uppercase shadow-sm cursor-pointer"
-                style={{ backgroundColor: activeModule.primaryColor || '#f58220' }}
-              >
-                Guardar y cerrar
-              </button>
+              <div className="flex justify-end pt-2">
+                <button
+                  type="button"
+                  onClick={() => setShowModuleMetaModal(false)}
+                  className="text-white font-bold text-xs px-5 py-2 rounded uppercase shadow-sm cursor-pointer hover:opacity-90 transition-opacity"
+                  style={{ backgroundColor: activeModule.primaryColor || '#f58220' }}
+                >
+                  Guardar y cerrar
+                </button>
+              </div>
             </div>
           </div>
-        </div>
-      )}
+        );
+      })()}
     </div>
   );
 }

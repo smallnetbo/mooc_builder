@@ -1,7 +1,8 @@
-// ModuleCoverView.jsx — Pantalla de presentación/carátula del módulo (Captura 1)
+// ModuleCoverView.jsx — Pantalla de presentación/carátula del módulo
 import React from 'react';
 import { useCourseStore, getAllLessons } from '../store/courseStore';
 import { AlignLeft, Check, Circle } from 'lucide-react';
+import { getFullCoverConfig, getOverlayStyle, CURVE_PATHS } from '../utils/coverConfig';
 
 export default function ModuleCoverView() {
   const {
@@ -9,7 +10,7 @@ export default function ModuleCoverView() {
     selectedModuleId,
     completedLessonIds,
     selectLesson,
-    setPlayerScreen
+    selectModule
   } = useCourseStore();
 
   const moduleNode = course.modules.find((m) => m.id === selectedModuleId) || course.modules[0];
@@ -21,12 +22,10 @@ export default function ModuleCoverView() {
   const lessons = getAllLessons(moduleNode);
 
   const handleStartOrContinue = () => {
-    // Busca la primera lección no completada en este módulo
     const firstUnfinished = lessons.find((l) => !completedLessonIds.includes(l.id));
     if (firstUnfinished) {
       selectLesson(firstUnfinished.id);
     } else {
-      // Si el módulo actual ya se completó, avanza al siguiente módulo del curso
       const modIndex = course.modules.findIndex((m) => m.id === selectedModuleId);
       if (modIndex >= 0 && modIndex < course.modules.length - 1) {
         const nextMod = course.modules[modIndex + 1];
@@ -42,20 +41,71 @@ export default function ModuleCoverView() {
   };
 
   const themeColor = moduleNode.primaryColor || '#f58220';
+  const cfg = getFullCoverConfig(moduleNode.coverConfig);
+  const coverImg = moduleNode.coverImage || 'https://images.unsplash.com/photo-1556761175-5973dc0f32e7?q=80&w=1600&auto=format&fit=crop';
+  const overlayStyle = getOverlayStyle(cfg, themeColor);
+  const curvePath = CURVE_PATHS[cfg.curveStyle] || CURVE_PATHS.smooth;
 
   return (
     <div className="w-full min-h-screen bg-white flex flex-col font-sans">
-      {/* HERO SECTION CON BORDES CURVOS CONCAVOS (Captura 1) */}
-      <div className="relative w-full bg-slate-900 text-white min-h-[420px] sm:min-h-[480px] flex flex-col justify-center items-center overflow-hidden">
-        {/* Imagen de fondo con overlay oscuro */}
-        <div
-          className="absolute inset-0 bg-cover bg-center opacity-40 transform scale-105"
-          style={{ backgroundImage: `url(${moduleNode.coverImage || 'https://images.unsplash.com/photo-1556761175-5973dc0f32e7?q=80&w=1600&auto=format&fit=crop'})` }}
-        />
-        <div className="absolute inset-0 bg-gradient-to-b from-black/50 via-black/40 to-black/70" />
+      {/* HERO SECTION PERSONALIZADO */}
+      <div
+        className="relative w-full text-white min-h-[420px] sm:min-h-[480px] flex flex-col justify-center items-center overflow-hidden transition-all duration-300"
+        style={{ backgroundColor: cfg.bgColor || '#0f172a' }}
+      >
+        {/* Panel 1: Capa de Imagen Base (cover-hero-bg) */}
+        {coverImg && (
+          <div
+            className="absolute inset-0 transition-all duration-300"
+            style={{
+              backgroundImage: `url('${coverImg}')`,
+              backgroundPosition: `${cfg.bgPositionX}% ${cfg.bgPositionY}%`,
+              backgroundSize: cfg.bgSize || 'cover',
+              backgroundRepeat: cfg.bgRepeat || 'no-repeat',
+              opacity: 0.85,
+            }}
+          />
+        )}
+
+        {/* Panel 2: Capa de Superposición (cover-hero-overlay) */}
+        {cfg.overlayEnabled && (
+          <div
+            className="absolute inset-0 transition-all duration-300 pointer-events-none"
+            style={overlayStyle}
+          />
+        )}
+
+        {/* Panel Adicional 1: Patrón Geométrico (Rombos / Puntos / Cuadrícula) */}
+        {cfg.patternStyle && cfg.patternStyle !== 'none' && (
+          <div
+            className="absolute top-0 left-0 w-72 h-72 pointer-events-none z-10 transition-opacity"
+            style={{ opacity: (cfg.patternOpacity ?? 20) / 100 }}
+          >
+            <svg className="w-full h-full text-white" viewBox="0 0 200 200">
+              <defs>
+                {cfg.patternStyle === 'diamonds' && (
+                  <pattern id="hero-pattern-diamonds" width="40" height="40" patternUnits="userSpaceOnUse">
+                    <path d="M20 0 L40 20 L20 40 L0 20 Z" fill="none" stroke="currentColor" strokeWidth="1.2" strokeOpacity="0.7" />
+                  </pattern>
+                )}
+                {cfg.patternStyle === 'dots' && (
+                  <pattern id="hero-pattern-dots" width="20" height="20" patternUnits="userSpaceOnUse">
+                    <circle cx="10" cy="10" r="3" fill="currentColor" fillOpacity="0.7" />
+                  </pattern>
+                )}
+                {cfg.patternStyle === 'grid' && (
+                  <pattern id="hero-pattern-grid" width="30" height="30" patternUnits="userSpaceOnUse">
+                    <path d="M 30 0 L 0 0 0 30" fill="none" stroke="currentColor" strokeWidth="1.2" strokeOpacity="0.5" />
+                  </pattern>
+                )}
+              </defs>
+              <rect width="200" height="200" fill={`url(#hero-pattern-${cfg.patternStyle})`} />
+            </svg>
+          </div>
+        )}
 
         {/* Cita / Título Principal del Módulo */}
-        <div className="relative z-10 max-w-4xl px-6 text-center space-y-6 pt-10 pb-20">
+        <div className="relative z-20 max-w-4xl px-6 text-center space-y-6 pt-10 pb-20">
           <h1 className="text-2xl sm:text-4xl md:text-5xl font-extrabold tracking-tight leading-tight drop-shadow-md text-white">
             {moduleNode.number ? `${moduleNode.number}: ` : ''}{moduleNode.title}
           </h1>
@@ -71,17 +121,14 @@ export default function ModuleCoverView() {
           </div>
         </div>
 
-        {/* CURVA CÓNCAVA INFERIOR (Forma cóncava blanca suave) */}
-        <div className="absolute bottom-0 left-0 right-0 w-full overflow-hidden leading-none z-20">
+        {/* Panel Adicional 2: Configuración de Curva SVG Inferior */}
+        <div className="absolute bottom-0 left-0 right-0 w-full overflow-hidden leading-none z-20 pointer-events-none">
           <svg
-            className="relative block w-full h-16 sm:h-24 md:h-28 text-white"
+            className="relative block w-full h-16 sm:h-24 md:h-28 text-white transition-all duration-300"
             viewBox="0 0 1440 120"
             preserveAspectRatio="none"
           >
-            <path
-              d="M0,0 Q720,130 1440,0 L1440,120 L0,120 Z"
-              fill="currentColor"
-            />
+            <path d={curvePath} fill="currentColor" />
           </svg>
         </div>
       </div>
@@ -102,7 +149,6 @@ export default function ModuleCoverView() {
         <div className="bg-white rounded-lg border border-slate-100 divide-y divide-slate-100 shadow-sm overflow-hidden">
           {lessons.map((lesson, idx) => {
             const isCompleted = completedLessonIds.includes(lesson.id);
-            // Si no está completado, evaluamos si es la lección activa o siguiente
             const isInProgress = !isCompleted && (idx === 0 || completedLessonIds.includes(lessons[idx - 1]?.id));
 
             return (
@@ -111,7 +157,6 @@ export default function ModuleCoverView() {
                 onClick={() => selectLesson(lesson.id)}
                 className="flex items-center justify-between p-3 sm:p-4 hover:bg-slate-50 transition-colors cursor-pointer group"
               >
-                {/* Ícono de lista izquierda + Título */}
                 <div className="flex items-center space-x-3 sm:space-x-4">
                   <span className="text-slate-400 group-hover:text-slate-600 transition-colors">
                     <AlignLeft size={16} />
@@ -121,7 +166,6 @@ export default function ModuleCoverView() {
                   </span>
                 </div>
 
-                {/* Indicador de estado a la derecha (Dinámico según el color del módulo) */}
                 <div className="flex items-center">
                   {isCompleted ? (
                     <div
