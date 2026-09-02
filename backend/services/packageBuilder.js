@@ -833,17 +833,35 @@ function generateStandalonePlayerHTML(course) {
     }
 
     function saveScormState() {
+      if (typeof ScormWrapper === 'undefined' || !ScormWrapper.isAvailable || !ScormWrapper.isAvailable()) {
+        return;
+      }
       if (state.selectedLessonId) {
         ScormWrapper.setLocation(state.selectedLessonId);
       }
       try {
-        ScormWrapper.setValue('cmi.suspend_data', JSON.stringify({
-          completed: state.completedLessonIds,
+        let existingData = {};
+        const prevData = ScormWrapper.getValue('cmi.suspend_data');
+        if (prevData && typeof prevData === 'string' && prevData.trim().startsWith('{')) {
+          try { existingData = JSON.parse(prevData); } catch (e) {}
+        }
+        
+        const mergedCompleted = Array.from(new Set([
+          ...(Array.isArray(existingData.completed) ? existingData.completed : []),
+          ...(Array.isArray(state.completedLessonIds) ? state.completedLessonIds : [])
+        ]));
+
+        const updatedData = {
+          ...existingData,
+          completed: mergedCompleted,
           screen: state.playerScreen
-        }));
+        };
+        ScormWrapper.setValue('cmi.suspend_data', JSON.stringify(updatedData));
         ScormWrapper.commit();
       } catch (e) {}
     }
+
+
 
     function toggleSidebar() {
       state.sidebarOpen = !state.sidebarOpen;
@@ -1328,8 +1346,67 @@ function generateStandalonePlayerHTML(course) {
     }
 
     window.activeAssessment = null;
-
     const QUIZ_RUNTIME = {};
+
+    function getQuizUserId() {
+      try {
+        if (typeof ScormWrapper !== 'undefined' && ScormWrapper.getValue) {
+          const uid = ScormWrapper.getValue('cmi.core.student_id') ||
+                      ScormWrapper.getValue('cmi.learner_id') ||
+                      ScormWrapper.getValue('cmi.core.student_name') ||
+                      ScormWrapper.getValue('cmi.learner_name');
+          if (uid && String(uid).trim()) return String(uid).trim();
+        }
+      } catch (e) {}
+      if (typeof window !== 'undefined') {
+        if (window.currentUserId && String(window.currentUserId).trim()) return String(window.currentUserId).trim();
+        if (window.USER_ID && String(window.USER_ID).trim()) return String(window.USER_ID).trim();
+        try {
+          const saved = localStorage.getItem('mooc_user_id') || sessionStorage.getItem('mooc_user_id');
+          if (saved && saved.trim()) return saved.trim();
+        } catch (e) {}
+      }
+      return 'default_user';
+    }
+
+    function saveActiveQuizDraftToScormRuntime(assessment) {
+      if (!assessment) return;
+      const qId = (assessment && assessment.id) || 'quiz';
+      const rt = getQuizRuntime(assessment);
+      const userId = rt.userId || getQuizUserId();
+
+      const draftData = {
+        userId,
+        userAnswers: rt.userAnswers || {},
+        flaggedQuestions: rt.flaggedQuestions || {},
+        currentQIndex: rt.currentQIndex || 0,
+        timeRemaining: rt.timeRemaining || 0,
+        stage: rt.stage || 'attempt',
+        updatedAt: new Date().toISOString()
+      };
+
+      try {
+        if (typeof ScormWrapper !== 'undefined' && ScormWrapper.isAvailable && ScormWrapper.isAvailable()) {
+          let existingData = {};
+          const prev = ScormWrapper.getValue('cmi.suspend_data');
+          if (prev && typeof prev === 'string' && prev.trim().startsWith('{')) {
+            try { existingData = JSON.parse(prev); } catch(e) {}
+          }
+          const activeDrafts = existingData.activeQuizDrafts || {};
+          activeDrafts[qId] = draftData;
+          const updated = {
+            ...existingData,
+            activeQuizDrafts
+          };
+          ScormWrapper.setValue('cmi.suspend_data', JSON.stringify(updated));
+          ScormWrapper.commit();
+        }
+      } catch (e) {}
+
+      try {
+        localStorage.setItem('mooc_quiz_active_attempt_' + qId + '_' + userId, JSON.stringify(draftData));
+      } catch (e) {}
+    }
 
     function getQuizRuntime(assessment) {
       const qId = (assessment && assessment.id) || 'quiz';
@@ -1338,33 +1415,52 @@ function generateStandalonePlayerHTML(course) {
         const passScore = assessment ? (assessment.passScore || 70) : 70;
         const maxGrade = settings.max_grade || 10.0;
         const passingGrade = settings.passing_grade || (maxGrade === 10.0 ? Math.round(passScore / 10) : passScore);
+        const userId = getQuizUserId();
 
-        let attemptsHistory = [];
+        let rawHistory = [];
+        let activeDraft = null;
+        let scormAvailable = false;
         try {
           const scormSuspend = ScormWrapper.getValue('cmi.suspend_data');
           if (scormSuspend && scormSuspend.startsWith('{')) {
+            scormAvailable = true;
             const parsed = JSON.parse(scormSuspend);
             if (parsed && parsed.quizAttempts && parsed.quizAttempts[qId]) {
-              attemptsHistory = parsed.quizAttempts[qId];
+              rawHistory = parsed.quizAttempts[qId];
+            }
+            if (parsed && parsed.activeQuizDrafts && parsed.activeQuizDrafts[qId]) {
+              const d = parsed.activeQuizDrafts[qId];
+              if (!d.userId || d.userId === userId) activeDraft = d;
             }
           }
         } catch (e) {}
 
-        if (!attemptsHistory.length) {
+        if (!scormAvailable && !rawHistory.length) {
           try {
-            const localStr = localStorage.getItem('mooc_quiz_history_' + qId);
-            if (localStr) attemptsHistory = JSON.parse(localStr) || [];
+            const userStr = localStorage.getItem('mooc_quiz_history_' + qId + '_' + userId);
+            const legacyStr = localStorage.getItem('mooc_quiz_history_' + qId);
+            if (userStr) rawHistory = JSON.parse(userStr) || [];
+            else if (legacyStr) rawHistory = JSON.parse(legacyStr) || [];
+
+            const draftStr = localStorage.getItem('mooc_quiz_active_attempt_' + qId + '_' + userId);
+            if (draftStr) {
+              const d = JSON.parse(draftStr);
+              if (d && (!d.userId || d.userId === userId)) activeDraft = d;
+            }
           } catch (e) {}
         }
 
+        const attemptsHistory = scormAvailable ? (rawHistory || []) : (rawHistory || []).filter(a => !a.userId || a.userId === userId);
+
         QUIZ_RUNTIME[qId] = {
-          stage: 'cover',
-          currentQIndex: 0,
-          userAnswers: {},
-          flaggedQuestions: {},
-          timeRemaining: settings.time_limit_seconds || 0,
+          stage: activeDraft ? (activeDraft.stage || 'attempt') : 'cover',
+          currentQIndex: activeDraft ? (activeDraft.currentQIndex || 0) : 0,
+          userAnswers: activeDraft ? (activeDraft.userAnswers || {}) : {},
+          flaggedQuestions: activeDraft ? (activeDraft.flaggedQuestions || {}) : {},
+          timeRemaining: activeDraft && activeDraft.timeRemaining !== undefined ? activeDraft.timeRemaining : (settings.time_limit_seconds || 0),
           timerInterval: null,
           attemptsHistory: attemptsHistory,
+          userId: userId,
           showStartModal: false,
           showMaxAttemptsModal: false,
           showResultModal: false,
@@ -1376,6 +1472,7 @@ function generateStandalonePlayerHTML(course) {
       }
       return QUIZ_RUNTIME[qId];
     }
+
 
     function renderQuizFormHTML(assessment) {
       window.activeAssessment = assessment;
@@ -1501,7 +1598,7 @@ function generateStandalonePlayerHTML(course) {
               '<div style="display:grid; grid-template-columns:140px 1fr; gap:16px; border:1px solid #e2e8f0; border-radius:12px; overflow:hidden; margin-bottom:16px;">' +
                 '<div style="background:#f8fafc; border-right:1px solid #e2e8f0; padding:14px; font-size:11.5px; display:flex; flex-direction:column; justify-content:space-between;">' +
                   '<div><strong style="font-size:13px; color:#0f172a; display:block;">Pregunta ' + (curQIdx + 1) + '</strong><span style="color:#64748b; display:block; margin-top:2px;">' + (selectedOpts.length > 0 ? 'Respuesta guardada' : 'Sin responder aún') + '</span><span style="color:#64748b; display:block;">Se puntúa como ' + (curQ.points || 1) + ',00</span></div>' +
-                  '<button type="button" style="margin-top:12px; padding:4px 8px; border-radius:4px; border:1px solid #cbd5e1; background:' + (isFlagged ? '#fef3c7' : '#fff') + '; color:' + (isFlagged ? '#92400e' : '#475569') + '; font-size:11px; font-weight:700; cursor:pointer;" onclick="onQuizToggleFlag(&quot;' + curQ.id + '&quot philosophy)">' + (isFlagged ? '⛳ Marcada' : 'Marcar pregunta') + '</button>' +
+                  '<button type="button" style="margin-top:12px; padding:4px 8px; border-radius:4px; border:1px solid #cbd5e1; background:' + (isFlagged ? '#fef3c7' : '#fff') + '; color:' + (isFlagged ? '#92400e' : '#475569') + '; font-size:11px; font-weight:700; cursor:pointer;" onclick="onQuizToggleFlag(&quot;' + curQ.id + '&quot;)">' + (isFlagged ? '⛳ Marcada' : 'Marcar pregunta') + '</button>' +
                 '</div>' +
                 '<div style="padding:16px; background:#fff;">' +
                   '<div style="font-weight:700; font-size:14.5px; color:#0f172a; margin-bottom:12px; line-height:1.5;">' + escapeHtml(curQ.text || '') + '</div>' +
@@ -1643,6 +1740,7 @@ function generateStandalonePlayerHTML(course) {
           rt.flaggedQuestions = {};
           rt.currentQIndex = 0;
           rt.timeRemaining = settings.time_limit_seconds || 0;
+          saveActiveQuizDraftToScormRuntime(assessment);
           startQuizTimer();
         }
       } else if (action === 'start_attempt_confirmed') {
@@ -1652,6 +1750,7 @@ function generateStandalonePlayerHTML(course) {
         rt.flaggedQuestions = {};
         rt.currentQIndex = 0;
         rt.timeRemaining = settings.time_limit_seconds || 0;
+        saveActiveQuizDraftToScormRuntime(assessment);
         startQuizTimer();
       } else if (action === 'show_max_modal') {
         rt.showMaxAttemptsModal = true;
@@ -1661,8 +1760,10 @@ function generateStandalonePlayerHTML(course) {
         rt.showResultModal = false;
       } else if (action === 'go_summary') {
         rt.stage = 'summary';
+        saveActiveQuizDraftToScormRuntime(assessment);
       } else if (action === 'go_attempt') {
         rt.stage = 'attempt';
+        saveActiveQuizDraftToScormRuntime(assessment);
       } else if (action === 'go_cover') {
         rt.stage = 'cover';
         rt.showResultModal = false;
@@ -1693,6 +1794,9 @@ function generateStandalonePlayerHTML(course) {
           } else {
             const timerEl = document.querySelector('.quiz-timer-badge');
             if (timerEl) timerEl.textContent = '⏱ Tiempo restante: ' + formatTimerSecs(rt.timeRemaining);
+            if (rt.timeRemaining % 10 === 0) {
+              saveActiveQuizDraftToScormRuntime(assessment);
+            }
           }
         }, 1000);
       }
@@ -1717,6 +1821,7 @@ function generateStandalonePlayerHTML(course) {
       } else {
         rt.userAnswers[curQ.id] = [optionId];
       }
+      saveActiveQuizDraftToScormRuntime(assessment);
     }
 
     function onQuizToggleFlag(questionId) {
@@ -1724,6 +1829,7 @@ function generateStandalonePlayerHTML(course) {
       if (!assessment) return;
       const rt = getQuizRuntime(assessment);
       rt.flaggedQuestions[questionId] = !rt.flaggedQuestions[questionId];
+      saveActiveQuizDraftToScormRuntime(assessment);
       renderMainView();
     }
 
@@ -1733,6 +1839,7 @@ function generateStandalonePlayerHTML(course) {
       const rt = getQuizRuntime(assessment);
       rt.currentQIndex = idx;
       rt.stage = 'attempt';
+      saveActiveQuizDraftToScormRuntime(assessment);
       renderMainView();
     }
 
@@ -1780,7 +1887,9 @@ function generateStandalonePlayerHTML(course) {
 
       const dateStr = new Date().toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
 
+      const userId = getQuizUserId();
       const newRecord = {
+        userId: userId,
         attemptNumber: rt.attemptsHistory.length + 1,
         date: dateStr,
         userAnswers: { ...rt.userAnswers },
@@ -1810,8 +1919,10 @@ function generateStandalonePlayerHTML(course) {
       } catch (e) {}
 
       try {
+        localStorage.setItem('mooc_quiz_history_' + qId + '_' + userId, JSON.stringify(rt.attemptsHistory));
         localStorage.setItem('mooc_quiz_history_' + qId, JSON.stringify(rt.attemptsHistory));
       } catch (e) {}
+
 
       rt.showResultModal = true;
       markCompleted(qId);

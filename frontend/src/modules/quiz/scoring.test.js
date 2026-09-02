@@ -101,4 +101,32 @@ console.log('--- RUNNING QUIZ SUBSYSTEM UNIT TESTS ---');
   console.log('✓ Test 4 Passed: Parser GIFT de Moodle correctamente verificado');
 }
 
+// TEST 5: Verificación de pertenencia de usuario en calificaciones e intentos
+{
+  const settings = { grading_method: 'HIGHEST_SCORE', passing_grade: 7.0 };
+
+  const attemptsMixedUsers = [
+    { userId: 'user_123', grade: 4.0 },
+    { userId: 'user_456', grade: 10.0 }, // Intento de otro usuario
+    { userId: 'user_123', grade: 8.5 }
+  ];
+
+  // Para user_123, la nota más alta debe ser 8.5 (ignorando el 10.0 de user_456)
+  const resUser123 = calculateFinalGrade(attemptsMixedUsers, settings, 'user_123');
+  assert.strictEqual(resUser123.finalGrade, 8.5, 'La nota más alta de user_123 debe ser 8.5');
+  assert.strictEqual(resUser123.isPassed, true);
+
+  // Para user_456, la nota debe ser 10.0
+  const resUser456 = calculateFinalGrade(attemptsMixedUsers, settings, 'user_456');
+  assert.strictEqual(resUser456.finalGrade, 10.0, 'La nota de user_456 debe ser 10.0');
+
+  // Para un usuario nuevo user_789 sin intentos, debe dar 0
+  const resUser789 = calculateFinalGrade(attemptsMixedUsers, settings, 'user_789');
+  assert.strictEqual(resUser789.finalGrade, 0, 'Usuario sin intentos debe tener nota 0');
+  assert.strictEqual(resUser789.isPassed, false);
+
+  console.log('✓ Test 5 Passed: Verificación de pertenencia y aislamiento de intentos por usuario');
+}
+
 console.log('--- ALL QUIZ UNIT TESTS PASSED SUCCESSFULLY ---');
+

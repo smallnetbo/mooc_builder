@@ -1,11 +1,13 @@
-// QuizRunner.jsx — Componente interactivo completo de evaluación estilo Moodle
-// Soporta modales de confirmación de intento (Intento X de Y), límite de intentos alcanzado,
-// ocultamiento de respuestas correctas durante la ejecución y modal de retroalimentación post-intento.
-
 import React, { useState, useEffect } from 'react';
-import { normalizeQuizConfig } from '../modules/quiz/types';
+import { normalizeQuizConfig, getCurrentUserId } from '../modules/quiz/types';
 import { calculateAttemptScore, calculateFinalGrade } from '../modules/quiz/scoring';
-import { saveQuizAttemptToSCORM, loadQuizAttemptsFromSCORM } from '../modules/quiz/scormAdapter';
+import {
+  saveQuizAttemptToSCORM,
+  loadQuizAttemptsFromSCORM,
+  saveActiveQuizDraftToSCORM,
+  loadActiveQuizDraftFromSCORM,
+  clearActiveQuizDraftInSCORM
+} from '../modules/quiz/scormAdapter';
 import {
   Clock,
   CheckCircle2,
@@ -28,6 +30,7 @@ export default function QuizRunner({ assessment, onComplete, themeColor = '#f582
   const quizConfig = normalizeQuizConfig(assessment);
   const settings = quizConfig.settings;
   const questions = quizConfig.questions;
+  const currentUserId = getCurrentUserId();
 
   // Estado del flujo: 'cover' | 'attempt' | 'summary' | 'review'
   const [stage, setStage] = useState('cover');
@@ -46,28 +49,22 @@ export default function QuizRunner({ assessment, onComplete, themeColor = '#f582
   const [currentQIndex, setCurrentQIndex] = useState(0);
   const [timeRemaining, setTimeRemaining] = useState(settings.time_limit_seconds || 0);
 
-  const storageKey = `mooc_quiz_active_attempt_${assessment.id}`;
-
-  // Cargar historial de intentos al montar
+  // Cargar historial de intentos al montar desde SCORM suspend_data (Servidor LMS)
   useEffect(() => {
     const loaded = loadQuizAttemptsFromSCORM(assessment.id);
     setAttemptsHistory(loaded);
   }, [assessment.id]);
 
-  // Cargar borrador de intento activo si existe
+  // Cargar borrador de intento activo si existe en SCORM suspend_data
   useEffect(() => {
-    try {
-      const savedActive = localStorage.getItem(storageKey);
-      if (savedActive) {
-        const parsed = JSON.parse(savedActive);
-        if (parsed && parsed.userAnswers) {
-          setUserAnswers(parsed.userAnswers || {});
-          setFlaggedQuestions(parsed.flaggedQuestions || {});
-          if (parsed.timeRemaining !== undefined) setTimeRemaining(parsed.timeRemaining);
-        }
-      }
-    } catch (e) {}
-  }, [storageKey]);
+    const draft = loadActiveQuizDraftFromSCORM(assessment.id);
+    if (draft && draft.userAnswers) {
+      setUserAnswers(draft.userAnswers || {});
+      setFlaggedQuestions(draft.flaggedQuestions || {});
+      if (draft.timeRemaining !== undefined) setTimeRemaining(draft.timeRemaining);
+      if (draft.stage === 'attempt' || draft.stage === 'summary') setStage(draft.stage);
+    }
+  }, [assessment.id]);
 
   // Temporizador flotante de cuenta regresiva
   useEffect(() => {
@@ -81,12 +78,13 @@ export default function QuizRunner({ assessment, onComplete, themeColor = '#f582
             return 0;
           }
           const nextVal = prev - 1;
-          try {
-            localStorage.setItem(
-              storageKey,
-              JSON.stringify({ userAnswers, flaggedQuestions, timeRemaining: nextVal })
-            );
-          } catch (e) {}
+          saveActiveQuizDraftToSCORM({
+            assessmentId: assessment.id,
+            userAnswers,
+            flaggedQuestions,
+            timeRemaining: nextVal,
+            stage
+          });
           return nextVal;
         });
       }, 1000);
@@ -94,7 +92,7 @@ export default function QuizRunner({ assessment, onComplete, themeColor = '#f582
     return () => {
       if (timer) clearInterval(timer);
     };
-  }, [stage, settings.time_limit_seconds, userAnswers, flaggedQuestions]);
+  }, [stage, settings.time_limit_seconds, userAnswers, flaggedQuestions, assessment.id]);
 
   const handleSelectOption = (questionId, optionId, isMultipleChoice) => {
     setUserAnswers((prev) => {
@@ -110,12 +108,13 @@ export default function QuizRunner({ assessment, onComplete, themeColor = '#f582
         updated = [optionId];
       }
       const newAnswers = { ...prev, [questionId]: updated };
-      try {
-        localStorage.setItem(
-          storageKey,
-          JSON.stringify({ userAnswers: newAnswers, flaggedQuestions, timeRemaining })
-        );
-      } catch (e) {}
+      saveActiveQuizDraftToSCORM({
+        assessmentId: assessment.id,
+        userAnswers: newAnswers,
+        flaggedQuestions,
+        timeRemaining,
+        stage: 'attempt'
+      });
       return newAnswers;
     });
   };
@@ -123,12 +122,13 @@ export default function QuizRunner({ assessment, onComplete, themeColor = '#f582
   const toggleFlagQuestion = (questionId) => {
     setFlaggedQuestions((prev) => {
       const updated = { ...prev, [questionId]: !prev[questionId] };
-      try {
-        localStorage.setItem(
-          storageKey,
-          JSON.stringify({ userAnswers, flaggedQuestions: updated, timeRemaining })
-        );
-      } catch (e) {}
+      saveActiveQuizDraftToSCORM({
+        assessmentId: assessment.id,
+        userAnswers,
+        flaggedQuestions: updated,
+        timeRemaining,
+        stage: 'attempt'
+      });
       return updated;
     });
   };
@@ -157,6 +157,13 @@ export default function QuizRunner({ assessment, onComplete, themeColor = '#f582
     setShowStartModal(false);
     setShowMaxAttemptsModal(false);
     setStage('attempt');
+    saveActiveQuizDraftToSCORM({
+      assessmentId: assessment.id,
+      userAnswers: {},
+      flaggedQuestions: {},
+      timeRemaining: settings.time_limit_seconds || 0,
+      stage: 'attempt'
+    });
   };
 
   const handleFinalSubmit = (isAutoSubmit = false) => {
@@ -165,6 +172,7 @@ export default function QuizRunner({ assessment, onComplete, themeColor = '#f582
     const isPassed = attemptScore.grade >= passingGrade;
 
     const newAttemptRecord = {
+      userId: currentUserId,
       attemptNumber: attemptsHistory.length + 1,
       date: new Date().toLocaleDateString('es-ES', {
         day: '2-digit',
@@ -184,9 +192,7 @@ export default function QuizRunner({ assessment, onComplete, themeColor = '#f582
     const updatedHistory = [...attemptsHistory, newAttemptRecord];
     setAttemptsHistory(updatedHistory);
 
-    try {
-      localStorage.removeItem(storageKey);
-    } catch (e) {}
+    clearActiveQuizDraftInSCORM(assessment.id);
 
     saveQuizAttemptToSCORM({
       assessmentId: assessment.id,
@@ -199,6 +205,7 @@ export default function QuizRunner({ assessment, onComplete, themeColor = '#f582
     setReviewingAttemptIndex(updatedHistory.length - 1);
     setShowResultModal(true);
   };
+
 
   const formatTimer = (seconds) => {
     const m = Math.floor(seconds / 60);
@@ -215,7 +222,8 @@ export default function QuizRunner({ assessment, onComplete, themeColor = '#f582
   const attemptsLeft =
     settings.max_attempts > 0 ? settings.max_attempts - attemptsHistory.length : 999;
   const canStartNewAttempt = settings.max_attempts === 0 || attemptsLeft > 0;
-  const currentFinal = calculateFinalGrade(attemptsHistory, settings);
+  const currentFinal = calculateFinalGrade(attemptsHistory, settings, currentUserId);
+
 
   // --- 1. VISTA DE PORTADA E HISTORIAL DE INTENTOS ---
   if (stage === 'cover') {

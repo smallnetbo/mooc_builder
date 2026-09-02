@@ -90,15 +90,21 @@ export function calculateAttemptScore(quizConfig, answersMap = {}) {
  * Calcula la nota final agregada a partir del historial de intentos y el método configurado.
  * Métodos: "HIGHEST_SCORE" | "AVERAGE" | "FIRST_ATTEMPT" | "LAST_ATTEMPT"
  */
-export function calculateFinalGrade(attemptsHistory = [], settings = {}) {
-  if (!Array.isArray(attemptsHistory) || attemptsHistory.length === 0) {
+export function calculateFinalGrade(attemptsHistory = [], settings = {}, userId = null) {
+  let userAttempts = Array.isArray(attemptsHistory) ? attemptsHistory : [];
+
+  if (userId) {
+    userAttempts = userAttempts.filter((a) => !a.userId || a.userId === userId);
+  }
+
+  if (userAttempts.length === 0) {
     return { finalGrade: 0, isPassed: false };
   }
 
   const method = settings.grading_method || 'HIGHEST_SCORE';
   const passingGrade = Number(settings.passing_grade) !== undefined ? Number(settings.passing_grade) : 7.0;
 
-  const grades = attemptsHistory.map((a) => Number(a.grade) || 0);
+  const grades = userAttempts.map((a) => Number(a.grade) || 0);
 
   let finalGrade = 0;
 
@@ -131,3 +137,4 @@ export function calculateFinalGrade(attemptsHistory = [], settings = {}) {
     method
   };
 }
+

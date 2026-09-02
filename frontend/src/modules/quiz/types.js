@@ -71,3 +71,36 @@ export function normalizeQuizConfig(assessment = {}) {
     questions,
   };
 }
+
+/**
+ * Obtiene de forma unificada la identidad del usuario actual desde SCORM o entorno web.
+ */
+export function getCurrentUserId() {
+  try {
+    const scorm = typeof window !== 'undefined' ? window.ScormWrapper : null;
+    if (scorm && typeof scorm.getValue === 'function') {
+      const scormUserId = scorm.getValue('cmi.core.student_id') ||
+                          scorm.getValue('cmi.learner_id') ||
+                          scorm.getValue('cmi.core.student_name') ||
+                          scorm.getValue('cmi.learner_name');
+      if (scormUserId && String(scormUserId).trim()) {
+        return String(scormUserId).trim();
+      }
+    }
+  } catch (e) {}
+
+  if (typeof window !== 'undefined') {
+    if (window.currentUserId && String(window.currentUserId).trim()) {
+      return String(window.currentUserId).trim();
+    }
+    if (window.USER_ID && String(window.USER_ID).trim()) {
+      return String(window.USER_ID).trim();
+    }
+    try {
+      const savedUser = localStorage.getItem('mooc_user_id') || sessionStorage.getItem('mooc_user_id');
+      if (savedUser && savedUser.trim()) return savedUser.trim();
+    } catch (e) {}
+  }
+
+  return 'default_user';
+}
